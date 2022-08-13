@@ -1,0 +1,236 @@
+hydra:
+  run:
+    dir: ./
+
+experiment_group: ~
+num_logs: 10
+seed: 1
+model_folder: ./
+model_load: ~ # filename to load a pretrained model from
+load_last: True
+offline_model_save: ~ # filename to save pretrain model to
+do_online: False
+load_best: False
+full_action_set: false
+save_by_epoch: True
+save_last_only: True
+public: True
+group: test
+group_add: none
+
+agent:
+  eps_eval: 0.001
+  eps_final: 0
+  eps_init: 1
+  repeat_random_lambda: 0
+  softmax_policy: False
+  model_kwargs:
+    aug_prob: 1
+    augmentation: [shift, intensity] # [none, rrc, affine, crop, blur, shift, intensity]
+    target_augmentation: [shift, intensity]
+    eval_augmentation: [none]
+    dqn_hidden_size: 512
+    dueling: 1
+    dynamics_blocks: 0
+    goal_n_step: ${algo.goal_n_step}
+    imagesize: 84
+    jumps: ${algo.jumps}
+    momentum_tau: 0.01
+    noisy_nets_std: 0
+    resblock: inverted
+    freeze_encoder: False
+    expand_ratio: 2
+    cnn_scale_factor: 1
+    blocks_per_group: 3  # 5 for sgi-l
+    ln_for_rl_head: false
+    noisy_nets: 0
+    norm_type: bn
+    predictor: linear
+    projection: q_l1
+    projection_dim: 1024
+    share_l1: False
+    q_l1_type: [value, advantage] # [noisy, value, advantage, relu]
+    renormalize: max
+    residual_tm: 0
+    inverse_model: ${algo.inverse_model_weight}
+    rl: ${algo.rl_weight}
+    bc: ${algo.bc_weight}
+    kl: ${algo.kl_weight}
+    bc_from_values: True
+    goal_rl: ${algo.goal_weight}
+    goal_all_to_all: ${algo.goal_all_to_all}
+    conv_goal: ${algo.conv_goal}
+    spr: 1
+    ssl_obj: byol
+    goal_conditioning_type: [goal_only,film]
+    load_head_to: 1
+    load_compat_mode: True
+    probe: ${algo.probe}
+    probe_jumps: ${algo.probe_jumps}
+    probe_task: ${algo.probe_task}
+    probe_model: linear
+    transition_type: gru #[gru, gru_det, conv_det]
+    gru_input_size: 600
+    gru_proj_size: 600
+    gru_in_dropout: 0
+    gru_out_dropout: 0
+    ln_ratio: 39
+    latent_dists: 32
+    latent_dist_size: 32
+    latent_proj_size: 600
+    kl_balance: 0.95
+    barlow_balance: 0.7
+    free_nats: 0
+    latent_merger: linear
+    transition_layer_norm: True
+    transition_batch_norm: False
+    warmup: 0
+    input_bn: False
+    renormalize_type: ln_nt
+    barlow_lambd: 0.0051
+    game: ${env.game}
+    use_ema: False
+    joint_embedding: False
+algo:
+  rl_weight: 1
+  spr_weight: 2
+  goal_weight: 0
+  t0_weight: 0
+  bc_weight: 0
+  kl_weight: 0.1
+  inverse_model_weight: 0
+  discount: 0.99
+  batch_size: 64
+  offline: ${runner.epochs}
+  clip_grad_norm: 10
+  clip_model_grad_norm: 10
+  eps_steps: 2001
+  jumps: 5
+  learning_rate: 0.0002
+  encoder_lr: ~
+  q_l1_lr: ~
+  dynamics_model_lr: ~
+  min_steps_learn: 2000
+  n_step_return: 10
+  optim_kwargs:
+    eps: 0.00015
+    weight_decay: 0.000001
+  pri_alpha: 0.5
+  pri_beta_steps: 100000
+  prioritized_replay: 1
+  replay_ratio: 64
+  target_update_interval: 1
+  target_update_tau: 0.01
+  goal_permute_prob: 0.2
+  goal_noise_weight: 0.5
+  goal_reward_scale: 10.
+  goal_dist: exp
+  goal_n_step: 1
+  goal_window: 50
+  goal_all_to_all: False
+  conv_goal: True
+  data_writer_args:
+    game: ${env.game}
+    data_dir: None
+    save_data: False
+    checkpoint_size: 1000000
+    imagesize: [84,84]
+    save_name: random
+    mmap: False
+  probe: prior
+  probe_jumps: [0,5]
+  probe_condition: 1
+  probe_control: False
+  probe_task: reward
+  supervised: False
+  lr_ft: 0.2
+  weight_decay_ft: 0.000001
+  epoch_ft: 12
+  lr_drop_ft: 10
+  clip_max_norm_ft: 0.1
+  reward_ft_weight: 1
+  term_ft_weight: 0
+  eval_only: ${runner.eval_only}
+
+context:
+  log_dir: logs
+  run_ID: 0
+  log_params:
+    game: ${env.game}
+  name: ${env.game}
+  snapshot_mode: last
+  override_prefix: true
+env:
+  game: ms_pacman
+  grayscale: 1
+  imagesize: 84
+  num_img_obs: 4
+  seed: ${seed}
+  full_action_set: ${full_action_set}
+  repeat_action_probability: 0
+eval_env: ${env}
+runner:
+  affinity:
+    cuda_idx: 0
+  final_eval_only: 0
+  eval_only: False
+  no_eval: 0
+  n_steps: 100000
+  probe_jumps: ${algo.probe_jumps}
+  probe_condition: ${algo.probe_condition}
+  seed: ${seed}
+  epochs: 0
+  save_every: ~
+  dataloader: ${offline.runner.dataloader}
+  no_init_eval: ${offline.runner.no_init_eval}
+  offline_model_save: ${offline_model_save}
+sampler:
+  batch_B: 1
+  batch_T: 1
+  env_kwargs: ${env}
+  eval_env_kwargs: ${eval_env}
+  eval_max_steps: 2800000  # 28k is just a safe ceiling
+  eval_max_trajectories: 100
+  eval_n_envs: 100
+  max_decorrelation_steps: 0
+wandb:
+  dir: ''
+  entity: ''
+  project: SGI
+  tags: []
+  disable_log: False
+
+# Offline training
+# Can be overridden via CLI arguments to run.py
+offline:
+  agent:
+    model_kwargs:
+      freeze_encoder: false
+  algo:
+    min_steps_learn: 0
+    rl_weight: 0
+  runner:
+    epochs: 0
+    save_every: 5000
+    no_eval: 1
+    no_init_eval: False
+    dataloader:
+      data_path: /scratch/wz1232/data
+      games: [MsPacman]
+      checkpoints: [1,25,50]
+      run: 2
+      frames: ${env.num_img_obs}
+      samples: 1000000
+      jumps: ${algo.jumps}
+      n_step_return: ${algo.n_step_return}
+      discount: ${algo.discount}
+      dataset_on_gpu: false
+      batch_size: ${algo.batch_size}
+      full_action_set: ${full_action_set}
+      num_workers: 4
+      pin_memory: false
+      prefetch_factor: 2
+      group_read_factor: 0
+      shuffle_checkpoints: False
+      dummy_action: false
+      ft_ckpt: 1
