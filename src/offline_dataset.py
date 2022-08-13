@@ -19,7 +19,7 @@ OfflineSamples = namedarraytuple(
 )
 
 
-class DQNReplayDataset(Dataset):  # double check logic for saving/loading eval dataset
+class DQNReplayDataset(Dataset):
     def __init__(
         self,
         data_path: Path,
@@ -86,9 +86,6 @@ class DQNReplayDataset(Dataset):  # double check logic for saving/loading eval d
         self.k = k_step
         self.size = min(self.action.shape[0], max_size)
         self.effective_size = self.size - self.f - self.k + 1
-        # self.observation.shape = [100000, 1, 84, 84]
-        # self.reward.shape = [10000, 1]
-        # self.effective_size = 99981
 
     def __len__(self) -> int:
         return self.effective_size * self.n_envs
@@ -97,7 +94,7 @@ class DQNReplayDataset(Dataset):  # double check logic for saving/loading eval d
         batch_ind = index // self.effective_size
         time_ind = index % self.effective_size
         sl = slice(time_ind, time_ind + self.f + self.k)
-        obs = self.observation[sl, batch_ind]  # [20, 84, 84]
+        obs = self.observation[sl, batch_ind]
 
         # Buffer reading code still expects us to return rewards even when not used
         if self.load_reward:
@@ -203,44 +200,29 @@ def get_offline_dataloaders(
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     def collate(batch):
         observation, action, reward, done = torch.utils.data.dataloader.default_collate(batch)
-        # observation.shape = [256, 20, 84, 84]
-        # action.shape      = [256, 20]
 
         observation = torch.einsum("bthw->tbhw", observation).unsqueeze(2).repeat(1, 1, frames, 1, 1)
-        # [256, 20, 84, 84] -> [20, 256, 84, 84] -> [20, 256, 1, 84, 84] -> [20, 256, 4, 84, 84]
 
         for i in range(1, frames):
             observation[:, :, i] = observation[:, :, i].roll(-i, 0)
 
-        # observations frame stacking: [[1,2,3,4], [2,3,4,5], [3,4,5,6] ...]
-
         if frames > 1:
-            observation = observation[:-frames].unsqueeze(3)  # tbfchw # [16, 256, 4, 1, 84, 84] drop last 4 frames
+            observation = observation[:-frames].unsqueeze(3)
 
-            # after fix:
             action = torch.einsum("bt->tb", action)[frames - 2 : -2].long()
             reward = torch.einsum("bt->tb", reward)[frames - 2 : -2]
             done = torch.einsum("bt->tb", done)[frames - 1 : -1].bool()
-
-            # before fix:
-            # action = torch.einsum('bt->tb', action)[frames-1:-1].long()
-            # reward = torch.einsum('bt->tb', reward)[frames-1:-1]
-            # done = torch.einsum('bt->tb', done)[frames:].bool()
-
-            # done frames: [4,5,6...]
         else:
             observation = observation[1:].unsqueeze(3)
             action = torch.einsum("bt->tb", action)[:-1].long()
             reward = torch.einsum("bt->tb", reward)[:-1]
             done = torch.einsum("bt->tb", done)[1:].bool()
-            # done frames: [4,5,6...]
 
-        reward = torch.nan_to_num(reward).sign()  # Apparently possible, somehow.
-        # action and reward frames: [3, 4, 5, ....]
+        reward = torch.nan_to_num(reward).sign()
 
         return_, done_n = discount_return_n_step(
             reward[1:], done, n_step_return, discount
-        )  # might need to fix for frame==1
+        )
         is_weights = torch.ones(observation.shape[1]).to(reward)
 
         return sanitize_batch(
@@ -298,14 +280,13 @@ def get_offline_dataloaders(
 class CacheEfficientSampler(torch.utils.data.Sampler):
     def __init__(self, num_blocks, block_len, num_repeats=20, generator=None):
         self.num_blocks = num_blocks
-        self.block_len = block_len  # For now, assume all have same length
+        self.block_len = block_len
         self.num_repeats = num_repeats
         self.generator = generator
         if self.num_repeats == "all":
             self.num_repeats = block_len
 
     def num_samples(self) -> int:
-        # dataset size might change at runtime
         return self.block_len * self.num_blocks
 
     def __iter__(self):

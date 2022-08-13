@@ -354,12 +354,11 @@ class SPRCategoricalDQN(CategoricalDQN):
         total_actions = []
 
         for i, samples in tqdm(enumerate(dataloader)):
-            observations = samples.all_observation.to(self.agent.device)  # [6, 256, 4, 1, 84, 84]
+            observations = samples.all_observation.to(self.agent.device)
             actions = samples.all_action.to(self.agent.device)
             rewards = samples.all_reward.to(self.agent.device)
 
             observations = observations.transpose(0, 1).flatten(2, 3)
-            # [7, 256, 4, 1, 84, 84] --> [256, 7, 4, 84, 84]
 
             observations = self.model.transform(observations[:, 0], self.model.eval_transforms)
             with nullcontext() if self.supervised else torch.no_grad():
