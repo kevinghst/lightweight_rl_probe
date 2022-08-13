@@ -5,7 +5,7 @@ import os
 # For pretraining we will use run 1, ckpts 3, 4, 5. Files will be downloaded as {file_type}_ {ckpt}.gz
 # For probing we will use run 2, ckpt 1. Files will be downloaded as {file_type}_ 2_1.gz
 
-data_path = '/scratch/wz1232/test_data'
+data_path = '/scratch/wz1232/test_data' # Change to your data path
 games = ['Amidar', 'Assault', 'Asterix', 'Boxing', 'DemonAttack', 'Frostbite', 'Gopher', 'Krull', 'Seaquest']
 types = ['action', 'terminal', 'observation', 'reward']
 

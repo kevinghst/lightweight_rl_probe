@@ -19,6 +19,7 @@ pip install --user -e .
 2. Download from [DQN Replay Dataset](https://research.google/tools/datasets/dqn-replay/) using the following bash script:
 
 ```bash scripts/download_replay_dataset.sh $DATA_DIR```
+
 3. After download, prepare the pretrain and probing datasets (modify ```data_path``` variable on line 8).
 
 ```python scripts/prepare_datasets.py```
@@ -33,7 +34,7 @@ Setup names are represented as {encoder}-{transition model}-{ssl losses}. **M** 
 
 Example:
 
-First, pretrain M_GL_Bt0.7I setup on frostbite using seed 1. Data lives in ```/home/data```, and checkpoint will be saved in ```checkpoints/my_run```:
+First, pretrain M_GL_Bt0.7I setup on frostbite using seed 1. Assume data lives in ```/home/data```, and checkpoint will be saved in ```checkpoints/my_run```:
 
 ```bash scripts/experiments/pretrain/M_GL_Bt0.7I.sh frostbite 1 my_run /home/data```
 
