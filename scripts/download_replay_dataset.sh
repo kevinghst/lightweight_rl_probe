@@ -1,6 +1,5 @@
 #!/bin/bash
-#games='Amidar Assault Asterix Boxing DemonAttack Frostbite Gopher Krull Seaquest'
-games='Amidar'
+games='Amidar Assault Asterix Boxing DemonAttack Frostbite Gopher Krull Seaquest'
 ckpts='3 4 5'
 files='action observation reward terminal'
 export data_dir=$1
