@@ -22,7 +22,7 @@ pip install --user -e .
 
 3. After download, prepare the pretrain and probing datasets (modify ```data_path``` variable on line 8).
 
-```python scripts/prepare_datasets.py```
+```python scripts/prepare_datasets.py --data_path $DATA_DIR```
 
 ## Usage:
 
