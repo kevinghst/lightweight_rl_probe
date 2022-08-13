@@ -21,6 +21,7 @@ pip install --user -e .
 ```bash scripts/download_replay_dataset.sh $DATA_DIR```
 
 3. After download, prepare the pretrain and probing datasets (modify ```data_path``` variable on line 8).
+This will take a few minutes.
 
 ```python scripts/prepare_datasets.py --data_path $DATA_DIR```
 

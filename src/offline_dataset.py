@@ -52,7 +52,7 @@ class DQNReplayDataset(Dataset):  # double check logic for saving/loading eval d
                 filename = Path(data_path / f"{game}/{filetype}_{checkpoint}.npy")
 
             print(f"Loading {filename}")
-            if filetype == "observation":
+            if filetype == "observation" and not eval and not ft:
                 data_ = np.load(filename, mmap_mode="r+")
             else:
                 data_ = np.load(filename)
