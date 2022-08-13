@@ -29,6 +29,7 @@ class GaussianBlur(object):
         else:
             return img
 
+
 class ColorJitter(object):
     def __init__(self, brightness=0.4, contrast=0.4, saturation=0.2, hue=0.1):
         self.brightness = self._check_input(brightness, "brightness")
@@ -161,6 +162,7 @@ class RandomResize(object):
 
     def __call__(self, img, size):
         return F.resize(img, size)
+
 
 class Compose(object):
     def __init__(self, transforms, p=1):

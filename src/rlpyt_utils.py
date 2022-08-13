@@ -20,121 +20,211 @@ import numpy as np
 import time
 
 atari_human_scores = dict(
-    alien=7127.7, amidar=1719.5, assault=742.0, asterix=8503.3,
-    bank_heist=753.1, battle_zone=37187.5, boxing=12.1,
-    breakout=30.5, chopper_command=7387.8, crazy_climber=35829.4,
-    demon_attack=1971.0, freeway=29.6, frostbite=4334.7,
-    gopher=2412.5, hero=30826.4, jamesbond=302.8, kangaroo=3035.0,
-    krull=2665.5, kung_fu_master=22736.3, ms_pacman=6951.6, pong=14.6,
-    private_eye=69571.3, qbert=13455.0, road_runner=7845.0,
-    seaquest=42054.7, up_n_down=11693.2
+    alien=7127.7,
+    amidar=1719.5,
+    assault=742.0,
+    asterix=8503.3,
+    bank_heist=753.1,
+    battle_zone=37187.5,
+    boxing=12.1,
+    breakout=30.5,
+    chopper_command=7387.8,
+    crazy_climber=35829.4,
+    demon_attack=1971.0,
+    freeway=29.6,
+    frostbite=4334.7,
+    gopher=2412.5,
+    hero=30826.4,
+    jamesbond=302.8,
+    kangaroo=3035.0,
+    krull=2665.5,
+    kung_fu_master=22736.3,
+    ms_pacman=6951.6,
+    pong=14.6,
+    private_eye=69571.3,
+    qbert=13455.0,
+    road_runner=7845.0,
+    seaquest=42054.7,
+    up_n_down=11693.2,
 )
 
 atari_der_scores = dict(
-    alien=739.9, amidar=188.6, assault=431.2, asterix=470.8,
-    bank_heist=51.0, battle_zone=10124.6, boxing=0.2,
-    breakout=1.9, chopper_command=861.8, crazy_climber=16185.3,
-    demon_attack=508, freeway=27.9, frostbite=866.8,
-    gopher=349.5, hero=6857.0, jamesbond=301.6,
-    kangaroo=779.3, krull=2851.5, kung_fu_master=14346.1,
-    ms_pacman=1204.1, pong=-19.3, private_eye=97.8, qbert=1152.9,
-    road_runner=9600.0, seaquest=354.1, up_n_down=2877.4,
+    alien=739.9,
+    amidar=188.6,
+    assault=431.2,
+    asterix=470.8,
+    bank_heist=51.0,
+    battle_zone=10124.6,
+    boxing=0.2,
+    breakout=1.9,
+    chopper_command=861.8,
+    crazy_climber=16185.3,
+    demon_attack=508,
+    freeway=27.9,
+    frostbite=866.8,
+    gopher=349.5,
+    hero=6857.0,
+    jamesbond=301.6,
+    kangaroo=779.3,
+    krull=2851.5,
+    kung_fu_master=14346.1,
+    ms_pacman=1204.1,
+    pong=-19.3,
+    private_eye=97.8,
+    qbert=1152.9,
+    road_runner=9600.0,
+    seaquest=354.1,
+    up_n_down=2877.4,
 )
 
 atari_spr_scores = dict(
-    alien=919.6, amidar=159.6, assault=699.5, asterix=983.5,
-    bank_heist=370.1, battle_zone=14472.0, boxing=30.5,
-    breakout=15.6, chopper_command=1130.0, crazy_climber=36659.8,
-    demon_attack=636.4, freeway=24.6, frostbite=1811.0,
-    gopher=593.4, hero=5602.8, jamesbond=378.7,
-    kangaroo=3876.0, krull=3810.3, kung_fu_master=14135.8,
-    ms_pacman=1205.3, pong=-3.8, private_eye=20.2, qbert=791.8,
-    road_runner=13062.4, seaquest=603.8, up_n_down=7307.8,
+    alien=919.6,
+    amidar=159.6,
+    assault=699.5,
+    asterix=983.5,
+    bank_heist=370.1,
+    battle_zone=14472.0,
+    boxing=30.5,
+    breakout=15.6,
+    chopper_command=1130.0,
+    crazy_climber=36659.8,
+    demon_attack=636.4,
+    freeway=24.6,
+    frostbite=1811.0,
+    gopher=593.4,
+    hero=5602.8,
+    jamesbond=378.7,
+    kangaroo=3876.0,
+    krull=3810.3,
+    kung_fu_master=14135.8,
+    ms_pacman=1205.3,
+    pong=-3.8,
+    private_eye=20.2,
+    qbert=791.8,
+    road_runner=13062.4,
+    seaquest=603.8,
+    up_n_down=7307.8,
 )
 
 atari_nature_scores = dict(
-    alien=3069, amidar=739.5, assault=3359,
-    asterix=6012, bank_heist=429.7, battle_zone=26300.,
-    boxing=71.8, breakout=401.2, chopper_command=6687.,
-    crazy_climber=114103, demon_attack=9711., freeway=30.3,
-    frostbite=328.3, gopher=8520., hero=19950., jamesbond=576.7,
-    kangaroo=6740., krull=3805., kung_fu_master=23270.,
-    ms_pacman=2311., pong=18.9, private_eye=1788.,
-    qbert=10596., road_runner=18257., seaquest=5286., up_n_down=8456.
+    alien=3069,
+    amidar=739.5,
+    assault=3359,
+    asterix=6012,
+    bank_heist=429.7,
+    battle_zone=26300.0,
+    boxing=71.8,
+    breakout=401.2,
+    chopper_command=6687.0,
+    crazy_climber=114103,
+    demon_attack=9711.0,
+    freeway=30.3,
+    frostbite=328.3,
+    gopher=8520.0,
+    hero=19950.0,
+    jamesbond=576.7,
+    kangaroo=6740.0,
+    krull=3805.0,
+    kung_fu_master=23270.0,
+    ms_pacman=2311.0,
+    pong=18.9,
+    private_eye=1788.0,
+    qbert=10596.0,
+    road_runner=18257.0,
+    seaquest=5286.0,
+    up_n_down=8456.0,
 )
 
 atari_random_scores = dict(
-    alien=227.8, amidar=5.8, assault=222.4,
-    asterix=210.0, bank_heist=14.2, battle_zone=2360.0,
-    boxing=0.1, breakout=1.7, chopper_command=811.0,
-    crazy_climber=10780.5, demon_attack=152.1, freeway=0.0,
-    frostbite=65.2, gopher=257.6, hero=1027.0, jamesbond=29.0,
-    kangaroo=52.0, krull=1598.0, kung_fu_master=258.5,
-    ms_pacman=307.3, pong=-20.7, private_eye=24.9,
-    qbert=163.9, road_runner=11.5, seaquest=68.4, up_n_down=533.4
+    alien=227.8,
+    amidar=5.8,
+    assault=222.4,
+    asterix=210.0,
+    bank_heist=14.2,
+    battle_zone=2360.0,
+    boxing=0.1,
+    breakout=1.7,
+    chopper_command=811.0,
+    crazy_climber=10780.5,
+    demon_attack=152.1,
+    freeway=0.0,
+    frostbite=65.2,
+    gopher=257.6,
+    hero=1027.0,
+    jamesbond=29.0,
+    kangaroo=52.0,
+    krull=1598.0,
+    kung_fu_master=258.5,
+    ms_pacman=307.3,
+    pong=-20.7,
+    private_eye=24.9,
+    qbert=163.9,
+    road_runner=11.5,
+    seaquest=68.4,
+    up_n_down=533.4,
 )
 
 atari_offline_scores = {
-    'air_raid': 8438.86630859375,
-    'alien': 2766.808740234375,
-    'amidar': 1556.9634033203124,
-    'assault': 1946.0983642578126,
-    'asterix': 4131.7666015625,
-    'asteroids': 988.1867919921875,
-    'atlantis': 944228.0,
-    'bank_heist': 907.7182373046875,
-    'battle_zone': 26458.991015625,
-    'beam_rider': 6453.26220703125,
-    'berzerk': 5934.23671875,
-    'bowling': 39.969451141357425,
-    'boxing': 84.11411743164062,
-    'breakout': 157.86087036132812,
-    'carnival': 5339.45888671875,
-    'centipede': 3972.48896484375,
-    'chopper_command': 3678.1458984375,
-    'crazy_climber': 118080.240625,
-    'demon_attack': 6517.02294921875,
-    'double_dunk': -1.2223684310913085,
-    'elevator_action': 1056.0,
-    'enduro': 1016.2788940429688,
-    'fishing_derby': 18.566691207885743,
-    'freeway': 26.761290740966796,
-    'frostbite': 1643.6466918945312,
-    'gopher': 8240.9982421875,
-    'gravitar': 310.55962524414065,
-    'hero': 16233.5439453125,
-    'ice_hockey': -4.018936491012573,
-    'jamesbond': 777.7283569335938,
-    'journey_escape': -1838.3529296875,
-    'kangaroo': 14125.109765625,
-    'krull': 7238.50810546875,
-    'kung_fu_master': 26637.877734375,
-    'montezuma_revenge': 2.6229507446289064,
-    'ms_pacman': 4171.52939453125,
-    'name_this_game': 8645.0869140625,
-    'phoenix': 5122.29873046875,
-    'pitfall': -2.578418827056885,
-    'pong': 18.253971099853516,
-    'pooyan': 4135.323828125,
-    'private_eye': 1415.1702465057374,
-    'qbert': 12275.1263671875,
-    'riverraid': 12798.88203125,
-    'road_runner': 47880.48203125,
-    'robotank': 63.44000015258789,
-    'seaquest': 3233.4708984375,
-    'skiing': -18856.73046875,
-    'solaris': 2041.66669921875,
-    'space_invaders': 2044.6254638671876,
-    'star_gunner': 55103.8390625,
-    'tennis': 0.0,
-    'time_pilot': 4160.50830078125,
-    'tutankham': 189.23845520019532,
-    'up_n_down': 15677.91884765625,
-    'venture': 60.28846340179443,
-    'video_pinball': 335055.6875,
-    'wizard_of_wor': 1787.789697265625,
-    'yars_revenge': 26762.979296875,
-    'zaxxon': 4681.930334472656
+    "air_raid": 8438.86630859375,
+    "alien": 2766.808740234375,
+    "amidar": 1556.9634033203124,
+    "assault": 1946.0983642578126,
+    "asterix": 4131.7666015625,
+    "asteroids": 988.1867919921875,
+    "atlantis": 944228.0,
+    "bank_heist": 907.7182373046875,
+    "battle_zone": 26458.991015625,
+    "beam_rider": 6453.26220703125,
+    "berzerk": 5934.23671875,
+    "bowling": 39.969451141357425,
+    "boxing": 84.11411743164062,
+    "breakout": 157.86087036132812,
+    "carnival": 5339.45888671875,
+    "centipede": 3972.48896484375,
+    "chopper_command": 3678.1458984375,
+    "crazy_climber": 118080.240625,
+    "demon_attack": 6517.02294921875,
+    "double_dunk": -1.2223684310913085,
+    "elevator_action": 1056.0,
+    "enduro": 1016.2788940429688,
+    "fishing_derby": 18.566691207885743,
+    "freeway": 26.761290740966796,
+    "frostbite": 1643.6466918945312,
+    "gopher": 8240.9982421875,
+    "gravitar": 310.55962524414065,
+    "hero": 16233.5439453125,
+    "ice_hockey": -4.018936491012573,
+    "jamesbond": 777.7283569335938,
+    "journey_escape": -1838.3529296875,
+    "kangaroo": 14125.109765625,
+    "krull": 7238.50810546875,
+    "kung_fu_master": 26637.877734375,
+    "montezuma_revenge": 2.6229507446289064,
+    "ms_pacman": 4171.52939453125,
+    "name_this_game": 8645.0869140625,
+    "phoenix": 5122.29873046875,
+    "pitfall": -2.578418827056885,
+    "pong": 18.253971099853516,
+    "pooyan": 4135.323828125,
+    "private_eye": 1415.1702465057374,
+    "qbert": 12275.1263671875,
+    "riverraid": 12798.88203125,
+    "road_runner": 47880.48203125,
+    "robotank": 63.44000015258789,
+    "seaquest": 3233.4708984375,
+    "skiing": -18856.73046875,
+    "solaris": 2041.66669921875,
+    "space_invaders": 2044.6254638671876,
+    "star_gunner": 55103.8390625,
+    "tennis": 0.0,
+    "time_pilot": 4160.50830078125,
+    "tutankham": 189.23845520019532,
+    "up_n_down": 15677.91884765625,
+    "venture": 60.28846340179443,
+    "video_pinball": 335055.6875,
+    "wizard_of_wor": 1787.789697265625,
+    "yars_revenge": 26762.979296875,
+    "zaxxon": 4681.930334472656,
 }
 
 
@@ -146,11 +236,23 @@ def maybe_update_summary(key, value):
 
 
 class MinibatchRlEvalWandb(MinibatchRlEval):
-
-    def __init__(self, final_eval_only=False, eval_only=False, no_eval=False, probe_jumps=[], probe_condition=1,
-                 no_init_eval=False, freeze_encoder=False, offline_model_save=None,
-                 linear_only=False, save_fn=None, start_itr=0, save_every=None,
-                 *args, **kwargs):
+    def __init__(
+        self,
+        final_eval_only=False,
+        eval_only=False,
+        no_eval=False,
+        probe_jumps=[],
+        probe_condition=1,
+        no_init_eval=False,
+        freeze_encoder=False,
+        offline_model_save=None,
+        linear_only=False,
+        save_fn=None,
+        start_itr=0,
+        save_every=None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.final_eval_only = final_eval_only
         self.no_eval = no_eval
@@ -164,7 +266,7 @@ class MinibatchRlEvalWandb(MinibatchRlEval):
 
     def log_diagnostics(self, itr, eval_traj_infos, eval_time, ft_metrics={}):
         cum_steps = (itr + 1) * self.sampler.batch_size * self.world_size
-        self.wandb_info = {'cum_steps': cum_steps}
+        self.wandb_info = {"cum_steps": cum_steps}
         super().log_diagnostics(itr, eval_traj_infos, eval_time)
         if ft_metrics:
             for key, val in ft_metrics.items():
@@ -180,18 +282,15 @@ class MinibatchRlEvalWandb(MinibatchRlEval):
         """
         p = psutil.Process()
         try:
-            if (self.affinity.get("master_cpus", None) is not None and
-                    self.affinity.get("set_affinity", True)):
+            if self.affinity.get("master_cpus", None) is not None and self.affinity.get("set_affinity", True):
                 p.cpu_affinity(self.affinity["master_cpus"])
             cpu_affin = p.cpu_affinity()
         except AttributeError:
             cpu_affin = "UNAVAILABLE MacOS"
-        logger.log(f"Runner {getattr(self, 'rank', '')} master CPU affinity: "
-            f"{cpu_affin}.")
+        logger.log(f"Runner {getattr(self, 'rank', '')} master CPU affinity: " f"{cpu_affin}.")
         if self.affinity.get("master_torch_threads", None) is not None:
             torch.set_num_threads(self.affinity["master_torch_threads"])
-        logger.log(f"Runner {getattr(self, 'rank', '')} master Torch threads: "
-            f"{torch.get_num_threads()}.")
+        logger.log(f"Runner {getattr(self, 'rank', '')} master Torch threads: " f"{torch.get_num_threads()}.")
         set_seed(self.seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
@@ -237,8 +336,7 @@ class MinibatchRlEvalWandb(MinibatchRlEval):
             for k in traj_infos[0]:
                 if not k.startswith("_"):
                     values = [info[k] for info in traj_infos]
-                    logger.record_tabular_misc_stat(k,
-                                                    values)
+                    logger.record_tabular_misc_stat(k, values)
 
                     wandb.run.summary[k] = np.average(values)
                     self.wandb_info[k + "Average"] = np.average(values)
@@ -246,8 +344,8 @@ class MinibatchRlEvalWandb(MinibatchRlEval):
                     self.wandb_info[k + "Min"] = np.min(values)
                     self.wandb_info[k + "Max"] = np.max(values)
                     self.wandb_info[k + "Median"] = np.median(values)
-                    if k == 'GameScore':
-                        game = self.sampler.env_kwargs['game']
+                    if k == "GameScore":
+                        game = self.sampler.env_kwargs["game"]
                         random_score = atari_random_scores[game]
                         der_score = atari_der_scores[game]
                         spr_score = atari_spr_scores[game]
@@ -265,24 +363,24 @@ class MinibatchRlEvalWandb(MinibatchRlEval):
                         self.wandb_info[k + "NatureNormalized"] = nature_normalized_score
                         self.wandb_info[k + "OfflineNormalized"] = offline_normalized_score
 
-                        maybe_update_summary(k+"Best", np.average(values))
-                        maybe_update_summary(k+"NormalizedBest", normalized_score)
-                        maybe_update_summary(k+"DERNormalizedBest", der_normalized_score)
-                        maybe_update_summary(k+"SPRNormalizedBest", spr_normalized_score)
-                        maybe_update_summary(k+"NatureNormalizedBest", nature_normalized_score)
-                        maybe_update_summary(k+"OfflineNormalizedBest", offline_normalized_score)
+                        maybe_update_summary(k + "Best", np.average(values))
+                        maybe_update_summary(k + "NormalizedBest", normalized_score)
+                        maybe_update_summary(k + "DERNormalizedBest", der_normalized_score)
+                        maybe_update_summary(k + "SPRNormalizedBest", spr_normalized_score)
+                        maybe_update_summary(k + "NatureNormalizedBest", nature_normalized_score)
+                        maybe_update_summary(k + "OfflineNormalizedBest", offline_normalized_score)
 
         if self._opt_infos:
             for k, v in self._opt_infos.items():
-                if 'Jumps' in k and v:
+                if "Jumps" in k and v:
                     if self.offline_model_save is not None:
                         try:
                             data = np.array(v).mean(axis=0).round(3)
-                            save_dir = f'{self.offline_model_save}/{k}.txt'
-                            save_str = ' '.join(["{:<10}".format(str(x)) for x in data])
-                            save_str += '\n'
+                            save_dir = f"{self.offline_model_save}/{k}.txt"
+                            save_str = " ".join(["{:<10}".format(str(x)) for x in data])
+                            save_str += "\n"
 
-                            with open(save_dir, 'a') as f:
+                            with open(save_dir, "a") as f:
                                 f.writelines(save_str)
                         except:
                             continue
@@ -354,40 +452,42 @@ class OnlineEval(MinibatchRlEvalWandb):
 
 
 class OfflineEval(MinibatchRlEvalWandb):
-    def __init__(self, epochs, dataloader, save_fn=None, start_itr=0, save_every=None, use_offline_data=True, *args, **kwargs):
+    def __init__(
+        self, epochs, dataloader, save_fn=None, start_itr=0, save_every=None, use_offline_data=True, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
 
         self.epochs = epochs
         self.itr = start_itr
         self.save_fn = save_fn
 
-        dataloader['eval'] = 0
-        dataloader['ft'] = 0
-        dataloader['n_step_return'] = 1
-        dataloader['k_step'] = self.algo.jumps + 2
+        dataloader["eval"] = 0
+        dataloader["ft"] = 0
+        dataloader["n_step_return"] = 1
+        dataloader["k_step"] = self.algo.jumps + 2
 
         if self.algo.probe:
             max_probe_jumps = max(self.probe_jumps) if self.probe_jumps else 0
 
             eval_dataloader = dataloader.copy()
-            eval_dataloader['samples'] = 20000
-            eval_dataloader['eval'] = 1
-            eval_dataloader['n_step_return'] = 1
-            eval_dataloader['k_step'] = max_probe_jumps + 1 + self.probe_condition
-            eval_dataloader['batch_size'] = 256
-            eval_dataloader['checkpoints'] = [15]
+            eval_dataloader["samples"] = 20000
+            eval_dataloader["eval"] = 1
+            eval_dataloader["n_step_return"] = 1
+            eval_dataloader["k_step"] = max_probe_jumps + 1 + self.probe_condition
+            eval_dataloader["batch_size"] = 256
+            eval_dataloader["checkpoints"] = [15]
 
             self.eval_dataloader = self.get_dataloaders(eval_dataloader)[0]
             self.algo.offline_eval_dataloader = iter(self.eval_dataloader)
             self.algo.offline_eval_dataset = self.eval_dataloader
 
             ft_dataloader = dataloader.copy()
-            ft_dataloader['samples'] = 80000
-            ft_dataloader['ft'] = 1
-            ft_dataloader['n_step_return'] = 1
-            ft_dataloader['k_step'] = max_probe_jumps + 1 + self.probe_condition
-            ft_dataloader['batch_size'] = 256
-            ft_dataloader['checkpoints'] = [15]
+            ft_dataloader["samples"] = 80000
+            ft_dataloader["ft"] = 1
+            ft_dataloader["n_step_return"] = 1
+            ft_dataloader["k_step"] = max_probe_jumps + 1 + self.probe_condition
+            ft_dataloader["batch_size"] = 256
+            ft_dataloader["checkpoints"] = [15]
 
             self.ft_dataloader = self.get_dataloaders(ft_dataloader)[0]
             self.algo.offline_ft_dataloader = iter(self.ft_dataloader)
@@ -423,7 +523,7 @@ class OfflineEval(MinibatchRlEvalWandb):
         if not self.no_init_eval:
             with logger.prefix(f"itr #0 "):
                 # initial finetune and evaluate
-                print('initial evaluation')
+                print("initial evaluation")
                 if self.algo.probe:
                     ft_metrics = self.algo.probe_features()
                 else:
@@ -451,8 +551,8 @@ class OfflineEval(MinibatchRlEvalWandb):
                 # finetune logic
                 if self.algo.probe:
                     ft_metrics = self.algo.probe_features()
-                    if ft_metrics['reward_f1_embed'] > best_f1:
-                        best_f1 = ft_metrics['reward_f1_embed']
+                    if ft_metrics["reward_f1_embed"] > best_f1:
+                        best_f1 = ft_metrics["reward_f1_embed"]
                         best_epoch = self.itr
                 else:
                     ft_metrics = {}
@@ -465,7 +565,9 @@ class OfflineEval(MinibatchRlEvalWandb):
                         self.save_fn(
                             self.agent.model.state_dict(),
                             self.algo.optimizer.state_dict(),
-                            self.itr, best=True, f1=best_f1
+                            self.itr,
+                            best=True,
+                            f1=best_f1,
                         )
 
                     # then save as last
@@ -477,8 +579,9 @@ class OfflineEval(MinibatchRlEvalWandb):
 
         self.shutdown()
 
+
 def delete_ind_from_array(array, ind):
-    tensor = np.concatenate([array[:ind], array[ind+1:]], 0)
+    tensor = np.concatenate([array[:ind], array[ind + 1 :]], 0)
     return tensor
 
 
@@ -493,8 +596,7 @@ class OneToOneSerialEvalCollector(SerialEvalCollector):
         observation = buffer_from_example(observations[0], len(self.envs))
         for b, o in enumerate(observations):
             observation[b] = o
-        action = buffer_from_example(self.envs[0].action_space.null_value(),
-                                     len(self.envs))
+        action = buffer_from_example(self.envs[0].action_space.null_value(), len(self.envs))
         reward = np.zeros(len(self.envs), dtype="float32")
         obs_pyt, act_pyt, rew_pyt = torchify_buffer((observation, action, reward))
         self.agent.reset()
@@ -508,9 +610,7 @@ class OneToOneSerialEvalCollector(SerialEvalCollector):
             while b < len(live_envs):  # don't want to do a for loop since live envs changes over time
                 env_id = live_envs[b]
                 o, r, d, env_info = self.envs[env_id].step(action[b])
-                traj_infos[env_id].step(observation[b],
-                                        action[b], r, d,
-                                        agent_info[b], env_info)
+                traj_infos[env_id].step(observation[b], action[b], r, d, agent_info[b], env_info)
                 if getattr(env_info, "traj_done", d):
                     completed_traj_infos.append(traj_infos[env_id].terminate(o))
                     observation = delete_ind_from_array(observation, b)
@@ -526,15 +626,12 @@ class OneToOneSerialEvalCollector(SerialEvalCollector):
 
                 b += 1
 
-                if (self.max_trajectories is not None and
-                        len(completed_traj_infos) >= self.max_trajectories):
-                    logger.log("Evaluation reached max num trajectories "
-                               f"({self.max_trajectories}).")
+                if self.max_trajectories is not None and len(completed_traj_infos) >= self.max_trajectories:
+                    logger.log("Evaluation reached max num trajectories " f"({self.max_trajectories}).")
                     return completed_traj_infos
 
         if t == self.max_T - 1:
-            logger.log("Evaluation reached max num time steps "
-                       f"({self.max_T}).")
+            logger.log("Evaluation reached max num time steps " f"({self.max_T}).")
         return completed_traj_infos
 
 
@@ -549,21 +646,19 @@ class SerialSampler(BaseSampler):
     environments.
     """
 
-    def __init__(self, *args, CollectorCls=CpuResetCollector,
-            eval_CollectorCls=SerialEvalCollector, **kwargs):
-        super().__init__(*args, CollectorCls=CollectorCls,
-            eval_CollectorCls=eval_CollectorCls, **kwargs)
+    def __init__(self, *args, CollectorCls=CpuResetCollector, eval_CollectorCls=SerialEvalCollector, **kwargs):
+        super().__init__(*args, CollectorCls=CollectorCls, eval_CollectorCls=eval_CollectorCls, **kwargs)
 
     def initialize(
-            self,
-            agent,
-            affinity=None,
-            seed=None,
-            bootstrap_value=False,
-            traj_info_kwargs=None,
-            rank=0,
-            world_size=1,
-            ):
+        self,
+        agent,
+        affinity=None,
+        seed=None,
+        bootstrap_value=False,
+        traj_info_kwargs=None,
+        rank=0,
+        world_size=1,
+    ):
         """Store the input arguments.  Instantiate the specified number of environment
         instances (``batch_B``).  Initialize the agent, and pre-allocate a memory buffer
         to hold the samples collected in each batch.  Applies ``traj_info_kwargs`` settings
@@ -577,11 +672,10 @@ class SerialSampler(BaseSampler):
         envs = [self.EnvCls(id=i, **self.env_kwargs) for i in range(B)]
         global_B = B * world_size
         env_ranks = list(range(rank * B, (rank + 1) * B))
-        agent.initialize(envs[0].spaces, share_memory=False,
-            global_B=global_B, env_ranks=env_ranks)
-        samples_pyt, samples_np, examples = build_samples_buffer(agent, envs[0],
-            self.batch_spec, bootstrap_value, agent_shared=False,
-            env_shared=False, subprocess=False)
+        agent.initialize(envs[0].spaces, share_memory=False, global_B=global_B, env_ranks=env_ranks)
+        samples_pyt, samples_np, examples = build_samples_buffer(
+            agent, envs[0], self.batch_spec, bootstrap_value, agent_shared=False, env_shared=False, subprocess=False
+        )
         if traj_info_kwargs:
             for k, v in traj_info_kwargs.items():
                 setattr(self.TrajInfoCls, "_" + k, v)  # Avoid passing at init.
@@ -596,8 +690,7 @@ class SerialSampler(BaseSampler):
             env_ranks=env_ranks,  # Might get applied redundantly to agent.
         )
         if self.eval_n_envs > 0:  # May do evaluation.
-            eval_envs = [self.EnvCls(id=i, **self.eval_env_kwargs)
-                for i in range(self.eval_n_envs)]
+            eval_envs = [self.EnvCls(id=i, **self.eval_env_kwargs) for i in range(self.eval_n_envs)]
             eval_CollectorCls = self.eval_CollectorCls or SerialEvalCollector
             self.eval_collector = eval_CollectorCls(
                 envs=eval_envs,
@@ -607,8 +700,7 @@ class SerialSampler(BaseSampler):
                 max_trajectories=self.eval_max_trajectories,
             )
 
-        agent_inputs, traj_infos = collector.start_envs(
-            self.max_decorrelation_steps)
+        agent_inputs, traj_infos = collector.start_envs(self.max_decorrelation_steps)
         collector.start_agent()
 
         self.agent = agent
@@ -627,7 +719,8 @@ class SerialSampler(BaseSampler):
         """
         # self.samples_np[:] = 0  # Unnecessary and may take time.
         agent_inputs, traj_infos, completed_infos = self.collector.collect_batch(
-            self.agent_inputs, self.traj_infos, itr)
+            self.agent_inputs, self.traj_infos, itr
+        )
         self.collector.reset_if_needed(agent_inputs)
         self.agent_inputs = agent_inputs
         self.traj_infos = traj_infos

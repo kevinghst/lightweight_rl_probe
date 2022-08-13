@@ -7,15 +7,28 @@ from rlpyt.models.utils import scale_grad
 from rlpyt.utils.tensor import infer_leading_dims, restore_leading_dims
 import copy
 
+
 def fixup_init(layer, num_layers):
-    nn.init.normal_(layer.weight, mean=0, std=np.sqrt(
-        2 / (layer.weight.shape[0] * np.prod(layer.weight.shape[2:]))) * num_layers ** (-0.25))
+    nn.init.normal_(
+        layer.weight,
+        mean=0,
+        std=np.sqrt(2 / (layer.weight.shape[0] * np.prod(layer.weight.shape[2:]))) * num_layers ** (-0.25),
+    )
 
 
 class InvertedResidual(nn.Module):
-    def __init__(self, in_channels, out_channels, stride, expand_ratio,
-                 norm_type, num_layers=1, groups=-1,
-                 drop_prob=0., bias=True):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        stride,
+        expand_ratio,
+        norm_type,
+        num_layers=1,
+        groups=-1,
+        drop_prob=0.0,
+        bias=True,
+    ):
         super(InvertedResidual, self).__init__()
         assert stride in [1, 2, 3]
         self.drop_prob = drop_prob
@@ -29,9 +42,11 @@ class InvertedResidual(nn.Module):
 
         if stride != 1:
             self.downsample = nn.Conv2d(in_channels, out_channels, stride, stride)
-            nn.init.normal_(self.downsample.weight, mean=0, std=
-                            np.sqrt(2 / (self.downsample.weight.shape[0] *
-                            np.prod(self.downsample.weight.shape[2:]))))
+            nn.init.normal_(
+                self.downsample.weight,
+                mean=0,
+                std=np.sqrt(2 / (self.downsample.weight.shape[0] * np.prod(self.downsample.weight.shape[2:]))),
+            )
         else:
             self.downsample = False
 
@@ -68,7 +83,7 @@ class InvertedResidual(nn.Module):
                 nn.ReLU(inplace=True),
                 # pw-linear
                 conv3,
-                init_normalization(out_channels, norm_type)
+                init_normalization(out_channels, norm_type),
             )
             if norm_type != "none":
                 nn.init.constant_(self.conv[-1].weight, 0)
@@ -90,13 +105,16 @@ class Residual(InvertedResidual):
 
 
 class ResnetCNN(nn.Module):
-    def __init__(self, input_channels,
-                 depths=(16, 32, 64),
-                 strides=(3, 2, 2),
-                 blocks_per_group=3,
-                 norm_type="bn",
-                 resblock=InvertedResidual,
-                 expand_ratio=2,):
+    def __init__(
+        self,
+        input_channels,
+        depths=(16, 32, 64),
+        strides=(3, 2, 2),
+        blocks_per_group=3,
+        norm_type="bn",
+        resblock=InvertedResidual,
+        expand_ratio=2,
+    ):
         super(ResnetCNN, self).__init__()
         self.depths = [input_channels] + depths
         self.resblock = resblock
@@ -104,47 +122,68 @@ class ResnetCNN(nn.Module):
         self.blocks_per_group = blocks_per_group
         self.layers = []
         self.norm_type = norm_type
-        self.num_layers = self.blocks_per_group*len(depths)
+        self.num_layers = self.blocks_per_group * len(depths)
         for i in range(len(depths)):
-            self.layers.append(self._make_layer(self.depths[i],
-                                                self.depths[i+1],
-                                                strides[i],
-                                                ))
+            self.layers.append(
+                self._make_layer(
+                    self.depths[i],
+                    self.depths[i + 1],
+                    strides[i],
+                )
+            )
         self.layers = nn.Sequential(*self.layers)
         self.train()
 
-    def _make_layer(self, in_channels, depth, stride,):
+    def _make_layer(
+        self,
+        in_channels,
+        depth,
+        stride,
+    ):
 
-        blocks = [self.resblock(in_channels, depth,
-                                expand_ratio=self.expand_ratio,
-                                stride=stride,
-                                norm_type=self.norm_type,
-                                num_layers=self.num_layers,)]
+        blocks = [
+            self.resblock(
+                in_channels,
+                depth,
+                expand_ratio=self.expand_ratio,
+                stride=stride,
+                norm_type=self.norm_type,
+                num_layers=self.num_layers,
+            )
+        ]
 
         for i in range(1, self.blocks_per_group):
-            blocks.append(self.resblock(depth, depth,
-                                        expand_ratio=self.expand_ratio,
-                                        stride=1,
-                                        norm_type=self.norm_type,
-                                        num_layers=self.num_layers,))
+            blocks.append(
+                self.resblock(
+                    depth,
+                    depth,
+                    expand_ratio=self.expand_ratio,
+                    stride=1,
+                    norm_type=self.norm_type,
+                    num_layers=self.num_layers,
+                )
+            )
 
         return nn.Sequential(*blocks)
 
     def forward(self, inputs):
         return self.layers(inputs)
 
+
 class ConvDet(nn.Module):
-    def __init__(self,
-                 channels,
-                 num_actions,
-                 args=None,
-                 blocks=0,
-                 hidden_size=256,
-                 norm_type="bn",
-                 renormalize=True,
-                 resblock=InvertedResidual,
-                 expand_ratio=2,
-                 residual=False):
+    def __init__(
+        self,
+        channels,
+        num_actions,
+        args=None,
+        blocks=0,
+        hidden_size=256,
+        norm_type="bn",
+        renormalize=True,
+        resblock=InvertedResidual,
+        expand_ratio=2,
+        residual=False,
+    ):
         super().__init__()
         self.hidden_size = hidden_size
         self.num_actions = num_actions
@@ -153,18 +192,23 @@ class ConvDet(nn.Module):
 
         self.residual = residual
         conv = nn.Conv2d
-        self.initial_layer = nn.Sequential(conv(channels+num_actions, hidden_size, 3, 1, 1),
-                                           nn.ReLU(), init_normalization(hidden_size, norm_type))
+        self.initial_layer = nn.Sequential(
+            conv(channels + num_actions, hidden_size, 3, 1, 1), nn.ReLU(), init_normalization(hidden_size, norm_type)
+        )
         self.final_layer = nn.Conv2d(hidden_size, channels, 3, 1, 1)
         resblocks = []
 
         for i in range(blocks):
-            resblocks.append(resblock(hidden_size,
-                                      hidden_size,
-                                      stride=1,
-                                      norm_type=norm_type,
-                                      expand_ratio=expand_ratio,
-                                      num_layers=blocks))
+            resblocks.append(
+                resblock(
+                    hidden_size,
+                    hidden_size,
+                    stride=1,
+                    norm_type=norm_type,
+                    expand_ratio=expand_ratio,
+                    num_layers=blocks,
+                )
+            )
         self.resnet = nn.Sequential(*resblocks)
         if self.residual:
             nn.init.constant_(self.final_layer.weight, 0)
@@ -172,11 +216,7 @@ class ConvDet(nn.Module):
 
     def forward(self, x, action, blocks=True):
         batch_range = torch.arange(action.shape[0], device=action.device)
-        action_onehot = torch.zeros(action.shape[0],
-                                    self.num_actions,
-                                    x.shape[-2],
-                                    x.shape[-1],
-                                    device=action.device)
+        action_onehot = torch.zeros(action.shape[0], self.num_actions, x.shape[-2], x.shape[-1], device=action.device)
         action_onehot[batch_range, action, :, :] = 1
         stacked_image = torch.cat([x, action_onehot], 1)
         next_state = self.initial_layer(stacked_image)
@@ -188,10 +228,12 @@ class ConvDet(nn.Module):
         next_state = F.relu(next_state)
         return next_state
 
+
 # orignal impl
 class GRUModel(nn.Module):
-    def __init__(self, input_size, proj_size, num_layers, num_actions,
-                 stoch_size, dropout, nonlinearity, use_ln, use_bn):
+    def __init__(
+        self, input_size, proj_size, num_layers, num_actions, stoch_size, dropout, nonlinearity, use_ln, use_bn
+    ):
         super().__init__()
         self.input_size = input_size
         self.num_layers = num_layers
@@ -224,7 +266,6 @@ class GRUModel(nn.Module):
 
         self.train()
 
-
     def forward(self, hidden, action, stoch):
         if torch.count_nonzero(hidden):
             hidden = self.ln(hidden)
@@ -240,9 +281,9 @@ class GRUModel(nn.Module):
 
         return next_state
 
+
 class GRUModelDet(nn.Module):
-    def __init__(self, input_size, repr_size, proj_size, num_layers, num_actions,
-                 dropout, nonlinearity):
+    def __init__(self, input_size, repr_size, proj_size, num_layers, num_actions, dropout, nonlinearity):
         super().__init__()
         self.input_size = input_size
         self.repr_size = repr_size
@@ -252,19 +293,12 @@ class GRUModelDet(nn.Module):
         self.hidden_size = proj_size if proj_size else repr_size
 
         if proj_size:
-            self.proj_in = nn.Sequential(
-                nn.Linear(repr_size, proj_size),
-                nonlinearity(),
-                nn.Dropout(dropout)
-            )
+            self.proj_in = nn.Sequential(nn.Linear(repr_size, proj_size), nonlinearity(), nn.Dropout(dropout))
 
         else:
             self.proj_in = None
 
-        self.embed = nn.Embedding(
-            num_actions,
-            input_size
-        )
+        self.embed = nn.Embedding(num_actions, input_size)
 
         self.cell = nn.GRU(
             input_size=input_size,
@@ -292,6 +326,7 @@ class GRUModelDet(nn.Module):
 
         return next_state
 
+
 def init_normalization(channels, type="bn", affine=True, one_d=False):
     assert type in ["bn", "ln", "in", "gn", "max", "none", None]
     if type == "bn":
@@ -307,7 +342,7 @@ def init_normalization(channels, type="bn", affine=True, one_d=False):
     elif type == "in":
         return nn.GroupNorm(channels, channels, affine=affine)
     elif type == "gn":
-        groups = max(min(32, channels//4), 1)
+        groups = max(min(32, channels // 4), 1)
         return nn.GroupNorm(groups, channels, affine=affine)
     elif type == "max":
         if not one_d:
@@ -331,10 +366,10 @@ class NoisyLinear(nn.Module):
         self.weight_sigma = nn.Parameter(torch.empty(out_features, in_features))
         self.bias_mu = nn.Parameter(torch.empty(out_features), requires_grad=bias)
         self.bias_sigma = nn.Parameter(torch.empty(out_features), requires_grad=bias)
-        self.register_buffer('bias_epsilon', torch.empty(out_features))
-        self.register_buffer('weight_epsilon', torch.empty(out_features, in_features))
-        self.register_buffer('old_bias_epsilon', torch.empty(out_features))
-        self.register_buffer('old_weight_epsilon', torch.empty(out_features, in_features))
+        self.register_buffer("bias_epsilon", torch.empty(out_features))
+        self.register_buffer("weight_epsilon", torch.empty(out_features, in_features))
+        self.register_buffer("old_bias_epsilon", torch.empty(out_features))
+        self.register_buffer("old_weight_epsilon", torch.empty(out_features, in_features))
         self.reset_parameters()
         self.reset_noise()
         self.use_old_noise = False
@@ -379,20 +414,24 @@ class NoisyLinear(nn.Module):
             weight_eps = self.old_weight_epsilon if self.use_old_noise else self.weight_epsilon
             bias_eps = self.old_bias_epsilon if self.use_old_noise else self.bias_epsilon
 
-            return F.linear(input, self.weight_mu + self.weight_sigma * weight_eps,
-                            self.bias_mu + self.bias_sigma * bias_eps)
+            return F.linear(
+                input, self.weight_mu + self.weight_sigma * weight_eps, self.bias_mu + self.bias_sigma * bias_eps
+            )
         else:
             return F.linear(input, self.weight_mu, self.bias_mu)
 
+
 class GoalConditioning(nn.Module):
-    def __init__(self,
-                 pixels=49,
-                 feature_dim=64,
-                 dqn_hidden_size=256,
-                 conv=True,
-                 film=True,
-                 goal_only_conditioning=False,
-                 n_heads=2):
+    def __init__(
+        self,
+        pixels=49,
+        feature_dim=64,
+        dqn_hidden_size=256,
+        conv=True,
+        film=True,
+        goal_only_conditioning=False,
+        n_heads=2,
+    ):
         """
         The basic idea: cat the online and goal states as feature maps,
         and then run a two-layer CNN on it.  We then run this through a flatten
@@ -414,15 +453,15 @@ class GoalConditioning(nn.Module):
                 nn.Conv2d(feature_dim * 2, feature_dim * 2, kernel_size=3, padding=1),
                 nn.ReLU(),
                 nn.Flatten(-3, -1),
-                nn.Linear(pixels * feature_dim * 2, output_size)
+                nn.Linear(pixels * feature_dim * 2, output_size),
             )
         else:
             self.network = nn.Sequential(
-                nn.Linear(dqn_hidden_size*2, dqn_hidden_size*2),
+                nn.Linear(dqn_hidden_size * 2, dqn_hidden_size * 2),
                 nn.ReLU(),
-                nn.Linear(dqn_hidden_size*2, dqn_hidden_size*2),
+                nn.Linear(dqn_hidden_size * 2, dqn_hidden_size * 2),
                 nn.ReLU(),
-                nn.Linear(dqn_hidden_size*2, output_size)
+                nn.Linear(dqn_hidden_size * 2, output_size),
             )
 
     def forward(self, states, goals):
@@ -468,20 +507,22 @@ class GoalConditionedDuelingHead(torch.nn.Module):
     latent space, but that probably sucks (and has very variable size between architectures).    
     """
 
-    def __init__(self,
-                 input_channels,
-                 output_size,
-                 pixels=30,
-                 n_atoms=51,
-                 hidden_size=512,
-                 grad_scale=2 ** (-1 / 2),
-                 noisy=0,
-                 std_init=0.1,
-                 ln_for_dqn=True,
-                 conv_goals=True,
-                 conditioning_type=["goal_only", "film"],
-                 share_l1=False,
-                 goal_all_to_all=False):
+    def __init__(
+        self,
+        input_channels,
+        output_size,
+        pixels=30,
+        n_atoms=51,
+        hidden_size=512,
+        grad_scale=2 ** (-1 / 2),
+        noisy=0,
+        std_init=0.1,
+        ln_for_dqn=True,
+        conv_goals=True,
+        conditioning_type=["goal_only", "film"],
+        share_l1=False,
+        goal_all_to_all=False,
+    ):
         super().__init__()
 
         self.goal_conditioner = GoalConditioning(
@@ -493,48 +534,55 @@ class GoalConditionedDuelingHead(torch.nn.Module):
             n_heads=2,
             conv=conv_goals,
         )
-        self.conditioning_style = "film" if "film" in conditioning_type else \
-            "sum" if "sum" in conditioning_type else "product"
+        self.conditioning_style = (
+            "film" if "film" in conditioning_type else "sum" if "sum" in conditioning_type else "product"
+        )
 
         self.goal_all_to_all = goal_all_to_all
 
         if noisy:
-            self.goal_linears = [NoisyLinear(pixels * input_channels, hidden_size, std_init=std_init),
-                                 NoisyLinear(hidden_size, output_size * n_atoms, std_init=std_init),
-                                 NoisyLinear(pixels * input_channels, hidden_size, std_init=std_init),
-                                 NoisyLinear(hidden_size, n_atoms, std_init=std_init),
-                                 ]
-            self.rl_linears = [NoisyLinear(pixels * input_channels, hidden_size, std_init=std_init),
-                               NoisyLinear(hidden_size, output_size * n_atoms, std_init=std_init),
-                               NoisyLinear(pixels * input_channels, hidden_size, std_init=std_init),
-                               NoisyLinear(hidden_size, n_atoms, std_init=std_init),
-                               ]
+            self.goal_linears = [
+                NoisyLinear(pixels * input_channels, hidden_size, std_init=std_init),
+                NoisyLinear(hidden_size, output_size * n_atoms, std_init=std_init),
+                NoisyLinear(pixels * input_channels, hidden_size, std_init=std_init),
+                NoisyLinear(hidden_size, n_atoms, std_init=std_init),
+            ]
+            self.rl_linears = [
+                NoisyLinear(pixels * input_channels, hidden_size, std_init=std_init),
+                NoisyLinear(hidden_size, output_size * n_atoms, std_init=std_init),
+                NoisyLinear(pixels * input_channels, hidden_size, std_init=std_init),
+                NoisyLinear(hidden_size, n_atoms, std_init=std_init),
+            ]
         else:
-            self.goal_linears = [nn.Linear(pixels * input_channels, hidden_size),
-                                 nn.Linear(hidden_size, output_size * n_atoms),
-                                 nn.Linear(pixels * input_channels, hidden_size),
-                                 nn.Linear(hidden_size, n_atoms),
-                                 ]
-            self.rl_linears = [nn.Linear(pixels * input_channels, hidden_size),
-                               nn.Linear(hidden_size, output_size * n_atoms),
-                               nn.Linear(pixels * input_channels, hidden_size),
-                               nn.Linear(hidden_size, n_atoms),
-                               ]
+            self.goal_linears = [
+                nn.Linear(pixels * input_channels, hidden_size),
+                nn.Linear(hidden_size, output_size * n_atoms),
+                nn.Linear(pixels * input_channels, hidden_size),
+                nn.Linear(hidden_size, n_atoms),
+            ]
+            self.rl_linears = [
+                nn.Linear(pixels * input_channels, hidden_size),
+                nn.Linear(hidden_size, output_size * n_atoms),
+                nn.Linear(pixels * input_channels, hidden_size),
+                nn.Linear(hidden_size, n_atoms),
+            ]
 
         if share_l1:
             self.rl_linears[0] = self.goal_linears[0]
             self.rl_linears[2] = self.goal_linears[2]
 
-        self.goal_advantage_layers = [self.goal_linears[0],
-                                      nn.ReLU(),
-                                      nn.LayerNorm(hidden_size, elementwise_affine=False)
-                                      if ln_for_dqn else nn.Identity(),
-                                      self.goal_linears[1]]
-        self.goal_value_layers = [self.goal_linears[2],
-                                  nn.ReLU(),
-                                  nn.LayerNorm(hidden_size, elementwise_affine=False)
-                                  if ln_for_dqn else nn.Identity(),
-                                  self.goal_linears[3]]
+        self.goal_advantage_layers = [
+            self.goal_linears[0],
+            nn.ReLU(),
+            nn.LayerNorm(hidden_size, elementwise_affine=False) if ln_for_dqn else nn.Identity(),
+            self.goal_linears[1],
+        ]
+        self.goal_value_layers = [
+            self.goal_linears[2],
+            nn.ReLU(),
+            nn.LayerNorm(hidden_size, elementwise_affine=False) if ln_for_dqn else nn.Identity(),
+            self.goal_linears[3],
+        ]
         self.advantage_bias = torch.nn.Parameter(torch.zeros(n_atoms), requires_grad=True)
         self.rl_advantage_bias = torch.nn.Parameter(torch.zeros(n_atoms), requires_grad=True)
         self.goal_value = nn.Sequential(*self.goal_value_layers)
@@ -639,16 +687,15 @@ class TransposedBN1D(nn.BatchNorm1d):
 
 
 class InverseModelHead(nn.Module):
-    def __init__(self,
-                 input_channels,
-                 num_actions=18,):
+    def __init__(
+        self,
+        input_channels,
+        num_actions=18,
+    ):
         super().__init__()
-        layers = [nn.Linear(input_channels*2, 256),
-                  nn.ReLU(),
-                  nn.Linear(256, num_actions)]
+        layers = [nn.Linear(input_channels * 2, 256), nn.ReLU(), nn.Linear(256, num_actions)]
         self.network = nn.Sequential(*layers)
         self.train()
 
     def forward(self, x):
         return self.network(x)
-

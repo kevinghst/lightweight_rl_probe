@@ -8,88 +8,96 @@ import torch.distributions as td
 from rlpyt.models.utils import update_state_dict
 from rlpyt.utils.tensor import select_at_indexes
 from rlpyt.utils.tensor import infer_leading_dims, restore_leading_dims
-from src.utils import count_parameters, get_augmentation, from_categorical, find_weight_norm, update_state_dict_compat, off_diagonal
+from src.utils import (
+    count_parameters,
+    get_augmentation,
+    from_categorical,
+    find_weight_norm,
+    update_state_dict_compat,
+    off_diagonal,
+)
 from src.networks import *
 
 import copy
 import math
+
 
 class SPRCatDqnModel(torch.nn.Module):
     """2D conlutional network feeding into MLP with ``n_atoms`` outputs
     per action, representing a discrete probability distribution of Q-values."""
 
     def __init__(
-            self,
-            image_shape,
-            output_size,
-            n_atoms,
-            dueling,
-            jumps,
-            spr,
-            augmentation,
-            target_augmentation,
-            eval_augmentation,
-            dynamics_blocks,
-            norm_type,
-            noisy_nets,
-            aug_prob,
-            projection,
-            imagesize,
-            dqn_hidden_size,
-            momentum_tau,
-            renormalize,
-            q_l1_type,
-            predictor,
-            rl,
-            bc,
-            kl,
-            bc_from_values,
-            goal_rl,
-            goal_n_step,
-            noisy_nets_std,
-            residual_tm,
-            inverse_model,
-            goal_conditioning_type,
-            transition_type,
-            gru_input_size,
-            gru_proj_size,
-            gru_in_dropout,
-            gru_out_dropout,
-            ln_ratio,
-            latent_dists,
-            latent_dist_size,
-            latent_proj_size,
-            kl_balance,
-            barlow_balance,
-            free_nats,
-            latent_merger,
-            transition_layer_norm,
-            transition_batch_norm,
-            resblock="inverted",
-            expand_ratio=2,
-            freeze_encoder=False,
-            share_l1=False,
-            cnn_scale_factor=1,
-            blocks_per_group=3,
-            ln_for_rl_head=False,
-            state_dict=None,
-            conv_goal=True,
-            goal_all_to_all=False,
-            load_head_to=1,
-            load_compat_mode=False,
-            probe='prior',
-            probe_jumps=[],
-            probe_task='reward',
-            probe_model='linear',
-            warmup=0,
-            input_bn=False,
-            renormalize_type='ln_nt',
-            ssl_obj='byol',
-            barlow_lambd=0.0051,
-            game='',
-            use_ema=False,
-            joint_embedding=False,
-            projection_dim=1024
+        self,
+        image_shape,
+        output_size,
+        n_atoms,
+        dueling,
+        jumps,
+        spr,
+        augmentation,
+        target_augmentation,
+        eval_augmentation,
+        dynamics_blocks,
+        norm_type,
+        noisy_nets,
+        aug_prob,
+        projection,
+        imagesize,
+        dqn_hidden_size,
+        momentum_tau,
+        renormalize,
+        q_l1_type,
+        predictor,
+        rl,
+        bc,
+        kl,
+        bc_from_values,
+        goal_rl,
+        goal_n_step,
+        noisy_nets_std,
+        residual_tm,
+        inverse_model,
+        goal_conditioning_type,
+        transition_type,
+        gru_input_size,
+        gru_proj_size,
+        gru_in_dropout,
+        gru_out_dropout,
+        ln_ratio,
+        latent_dists,
+        latent_dist_size,
+        latent_proj_size,
+        kl_balance,
+        barlow_balance,
+        free_nats,
+        latent_merger,
+        transition_layer_norm,
+        transition_batch_norm,
+        resblock="inverted",
+        expand_ratio=2,
+        freeze_encoder=False,
+        share_l1=False,
+        cnn_scale_factor=1,
+        blocks_per_group=3,
+        ln_for_rl_head=False,
+        state_dict=None,
+        conv_goal=True,
+        goal_all_to_all=False,
+        load_head_to=1,
+        load_compat_mode=False,
+        probe="prior",
+        probe_jumps=[],
+        probe_task="reward",
+        probe_model="linear",
+        warmup=0,
+        input_bn=False,
+        renormalize_type="ln_nt",
+        ssl_obj="byol",
+        barlow_lambd=0.0051,
+        game="",
+        use_ema=False,
+        joint_embedding=False,
+        projection_dim=1024,
     ):
         """Instantiates the neural network according to arguments; network defaults
         stored within this method."""
@@ -120,14 +128,12 @@ class SPRCatDqnModel(torch.nn.Module):
         self.conv = nn.Sequential(
             ResnetCNN(
                 in_channels,
-                depths=[int(32 * cnn_scale_factor),
-                int(64 * cnn_scale_factor),
-                int(64 * cnn_scale_factor)],
+                depths=[int(32 * cnn_scale_factor), int(64 * cnn_scale_factor), int(64 * cnn_scale_factor)],
                 strides=[3, 2, 2],
                 norm_type=norm_type,
                 blocks_per_group=blocks_per_group,
                 resblock=InvertedResidual,
-                expand_ratio=expand_ratio
+                expand_ratio=expand_ratio,
             )
         )
 
@@ -153,31 +159,33 @@ class SPRCatDqnModel(torch.nn.Module):
         self.eval_augmentation = eval_augmentation
         self.num_actions = output_size
 
-        self.head = GoalConditionedDuelingHead(self.hidden_size,
-                                               output_size,
-                                               hidden_size=self.dqn_hidden_size,
-                                               pixels=self.pixels,
-                                               noisy=self.noisy,
-                                               conv_goals=conv_goal,
-                                               goal_all_to_all=goal_all_to_all,
-                                               share_l1=share_l1,
-                                               n_atoms=n_atoms,
-                                               ln_for_dqn=ln_for_rl_head,
-                                               conditioning_type=goal_conditioning_type,
-                                               std_init=noisy_nets_std)
+        self.head = GoalConditionedDuelingHead(
+            self.hidden_size,
+            output_size,
+            hidden_size=self.dqn_hidden_size,
+            pixels=self.pixels,
+            noisy=self.noisy,
+            conv_goals=conv_goal,
+            goal_all_to_all=goal_all_to_all,
+            share_l1=share_l1,
+            n_atoms=n_atoms,
+            ln_for_dqn=ln_for_rl_head,
+            conditioning_type=goal_conditioning_type,
+            std_init=noisy_nets_std,
+        )
 
         self.transition_type = transition_type
         self.ln_ratio = ln_ratio
         self.latent_dists = latent_dists
         self.latent_dist_size = latent_dist_size
-        self.use_latent = True if self.transition_type == 'gru' else False
+        self.use_latent = True if self.transition_type == "gru" else False
         self.kl_balance = kl_balance
         self.barlow_balance = barlow_balance
         self.free_nats = free_nats
         self.gru_proj_size = gru_proj_size
         repr_size = self.pixels * self.hidden_size
 
-        if transition_type == 'gru':
+        if transition_type == "gru":
             self.dynamics_model = GRUModel(
                 input_size=gru_input_size,
                 proj_size=gru_proj_size,
@@ -187,31 +195,29 @@ class SPRCatDqnModel(torch.nn.Module):
                 dropout=gru_in_dropout,
                 nonlinearity=nn.ELU,
                 use_ln=transition_layer_norm,
-                use_bn=transition_batch_norm
+                use_bn=transition_batch_norm,
             )
 
             self.prior_net = nn.Sequential(
                 nn.Linear(gru_proj_size, latent_proj_size),
                 nn.ELU(),
-                nn.Linear(latent_proj_size, latent_dists * latent_dist_size)
+                nn.Linear(latent_proj_size, latent_dists * latent_dist_size),
             )
 
             self.posterior_net = nn.Sequential(
                 nn.Linear(repr_size + gru_proj_size, latent_proj_size),
                 nn.ELU(),
-                nn.Linear(latent_proj_size, latent_dists * latent_dist_size)
+                nn.Linear(latent_proj_size, latent_dists * latent_dist_size),
             )
-            if latent_merger == 'linear':
+            if latent_merger == "linear":
                 self.latent_merger = nn.Sequential(
                     nn.Linear(latent_dists * latent_dist_size + gru_proj_size, repr_size)
                 )
             else:
                 self.latent_merger = nn.Sequential(
-                    nn.Linear(latent_dists * latent_dist_size + gru_proj_size, 600),
-                    nn.ELU(),
-                    nn.Linear(600, repr_size)
+                    nn.Linear(latent_dists * latent_dist_size + gru_proj_size, 600), nn.ELU(), nn.Linear(600, repr_size)
                 )
-        elif transition_type == 'gru_det':
+        elif transition_type == "gru_det":
             self.dynamics_model = GRUModelDet(
                 input_size=gru_input_size,
                 repr_size=repr_size,
@@ -227,24 +233,26 @@ class SPRCatDqnModel(torch.nn.Module):
                 nn.Dropout(gru_out_dropout),
             )
         else:
-            self.dynamics_model = ConvDet(channels=self.hidden_size,
-                                                  num_actions=output_size,
-                                                  hidden_size=self.hidden_size,
-                                                  blocks=dynamics_blocks,
-                                                  norm_type=norm_type,
-                                                  resblock=resblock,
-                                                  expand_ratio=expand_ratio,
-                                                  renormalize=self.renormalize,
-                                                  residual=residual_tm)
+            self.dynamics_model = ConvDet(
+                channels=self.hidden_size,
+                num_actions=output_size,
+                hidden_size=self.hidden_size,
+                blocks=dynamics_blocks,
+                norm_type=norm_type,
+                resblock=resblock,
+                expand_ratio=expand_ratio,
+                renormalize=self.renormalize,
+                residual=residual_tm,
+            )
 
         self.renormalize_type = renormalize_type
-        if self.renormalize_type == 'ln':
+        if self.renormalize_type == "ln":
             self.renormalize_layer = nn.LayerNorm(repr_size)
-        elif self.renormalize_type == 'bn':
+        elif self.renormalize_type == "bn":
             self.renormalize_layer = nn.BatchNorm1d(repr_size)
-        elif self.renormalize_type == 'bn_nt':
+        elif self.renormalize_type == "bn_nt":
             self.renormalize_layer = nn.BatchNorm1d(repr_size, affine=False)
-        elif self.renormalize_type == 'ln_nt':
+        elif self.renormalize_type == "ln_nt":
             self.renormalize_layer = nn.LayerNorm(repr_size, elementwise_affine=False)
 
         self.momentum_tau = momentum_tau
@@ -257,7 +265,7 @@ class SPRCatDqnModel(torch.nn.Module):
                 nn.Linear(self.pixels * self.hidden_size, 512),
                 TransposedBN1D(512),
                 nn.ReLU(),
-                nn.Linear(512, 256)
+                nn.Linear(512, 256),
             )
             self.target_projection = self.projection
             projection_size = 256
@@ -268,10 +276,8 @@ class SPRCatDqnModel(torch.nn.Module):
                 layers = [self.head.rl_linears[0], self.head.rl_linears[2]]
             self.projection = QL1Head(layers, dueling=dueling, type=q_l1_type)
             projection_size = self.projection.out_features
-        elif self.projection_type == 'linear':
-            self.projection = nn.Sequential(
-                nn.Linear(self.pixels * self.hidden_size, projection_dim)
-            )
+        elif self.projection_type == "linear":
+            self.projection = nn.Sequential(nn.Linear(self.pixels * self.hidden_size, projection_dim))
             projection_size = projection_dim
         else:
             projection_size = self.pixels * self.hidden_size
@@ -285,23 +291,27 @@ class SPRCatDqnModel(torch.nn.Module):
             self.target_projection = copy.deepcopy(self.target_projection)
             self.target_encoder = copy.deepcopy(self.conv)
             self.target_renormalize_layer = copy.deepcopy(self.renormalize_layer)
-            for param in (list(self.target_encoder.parameters()) + list(self.target_projection.parameters()) + list(self.target_renormalize_layer.parameters())):
+            for param in (
+                list(self.target_encoder.parameters())
+                + list(self.target_projection.parameters())
+                + list(self.target_renormalize_layer.parameters())
+            ):
                 param.requires_grad = False
 
         if self.bc and not self.bc_from_values:
             self.bc_head = nn.Sequential(nn.ReLU(), nn.Linear(projection_size, output_size))
 
-        if self.ssl_obj == 'barlow':
+        if self.ssl_obj == "barlow":
             self.barlow_bn = nn.BatchNorm1d(projection_dim, affine=False)
             self.barlow_lambd = barlow_lambd
-    
+
         # Gotta initialize this no matter what or the state dict won't load
         if predictor == "mlp":
             self.predictor = nn.Sequential(
                 nn.Linear(projection_size, projection_size * 2),
                 TransposedBN1D(projection_size * 2),
                 nn.ReLU(),
-                nn.Linear(projection_size * 2, projection_size)
+                nn.Linear(projection_size * 2, projection_size),
             )
         elif predictor == "linear":
             self.predictor = nn.Sequential(
@@ -312,11 +322,16 @@ class SPRCatDqnModel(torch.nn.Module):
 
         self.use_inverse_model = inverse_model
         # Gotta initialize this no matter what or the state dict won't load
-        self.inverse_model = InverseModelHead(projection_size,
-                                              output_size, )
+        self.inverse_model = InverseModelHead(
+            projection_size,
+            output_size,
+        )
 
-        print("Initialized model with {} parameters; CNN has {}.".format(count_parameters(self),
-                                                                         count_parameters(self.conv)))
+        print(
+            "Initialized model with {} parameters; CNN has {}.".format(
+                count_parameters(self), count_parameters(self.conv)
+            )
+        )
         print("Initialized CNN weight norm is {}".format(find_weight_norm(self.conv.parameters()).item()))
 
         if state_dict is not None:
@@ -337,22 +352,18 @@ class SPRCatDqnModel(torch.nn.Module):
         self.warmup = warmup
 
         if self.probe and self.probe is not None:
-            if probe_task == 'reward':
+            if probe_task == "reward":
                 probe_out_dim = 1
-            elif probe_task == 'next_action':
+            elif probe_task == "next_action":
                 probe_out_dim = output_size
             else:
                 raise NotImplementedError
 
-            if probe_model == 'linear':
-                predictor = nn.Linear(
-                    fake_output.reshape(-1).shape[0], probe_out_dim
-                )
+            if probe_model == "linear":
+                predictor = nn.Linear(fake_output.reshape(-1).shape[0], probe_out_dim)
             else:
                 predictor = nn.Sequential(
-                    nn.Linear(fake_output.reshape(-1).shape[0], 300),
-                    nn.ReLU(),
-                    nn.Linear(300, probe_out_dim)
+                    nn.Linear(fake_output.reshape(-1).shape[0], 300), nn.ReLU(), nn.Linear(300, probe_out_dim)
                 )
 
             self.init_reward_predictor_ft = copy.deepcopy(predictor)
@@ -362,7 +373,6 @@ class SPRCatDqnModel(torch.nn.Module):
         self.frozen_encoder = freeze_encoder
         if self.frozen_encoder:
             self.freeze_encoder()
-
 
     def set_sampling(self, sampling):
         if self.noisy:
@@ -374,20 +384,16 @@ class SPRCatDqnModel(torch.nn.Module):
             param.requires_grad = False
 
     def byol_loss(self, f_x1s, f_x2s):
-        f_x1 = F.normalize(f_x1s.float(), p=2., dim=-1, eps=1e-3)
-        f_x2 = F.normalize(f_x2s.float(), p=2., dim=-1, eps=1e-3)
+        f_x1 = F.normalize(f_x1s.float(), p=2.0, dim=-1, eps=1e-3)
+        f_x2 = F.normalize(f_x2s.float(), p=2.0, dim=-1, eps=1e-3)
         loss = F.mse_loss(f_x1, f_x2, reduction="none").sum(-1).mean(0)
         return loss
 
     def do_byol_loss(self, pred_latents, targets, observation):
         pred_latents = self.predictor(pred_latents)
 
-        targets = targets.view(-1, observation.shape[1],
-                               self.jumps + 1,
-                               targets.shape[-1]).transpose(1, 2)
-        latents = pred_latents.view(-1, observation.shape[1],
-                                    self.jumps + 1,
-                                    pred_latents.shape[-1]).transpose(1, 2)
+        targets = targets.view(-1, observation.shape[1], self.jumps + 1, targets.shape[-1]).transpose(1, 2)
+        latents = pred_latents.view(-1, observation.shape[1], self.jumps + 1, pred_latents.shape[-1]).transpose(1, 2)
 
         byol_loss = self.byol_loss(latents, targets).view(-1, observation.shape[1])  # split to batch, jumps
 
@@ -404,8 +410,8 @@ class SPRCatDqnModel(torch.nn.Module):
         return loss
 
     def do_barlow_loss(self, feats1, feats2):
-        feats1 = feats1.flatten(0,1)
-        feats2 = feats2.flatten(0,1)
+        feats1 = feats1.flatten(0, 1)
+        feats2 = feats2.flatten(0, 1)
 
         # batch implementation
         if self.barlow_balance == 0.5:
@@ -416,9 +422,9 @@ class SPRCatDqnModel(torch.nn.Module):
             return self.barlow_balance * left_barlow_loss + (1 - self.barlow_balance) * right_barlow_loss
 
     def do_spr_loss(self, pred_latents, targets, observation):
-        if self.ssl_obj == 'byol':
+        if self.ssl_obj == "byol":
             loss = self.do_byol_loss(pred_latents.flatten(0, 1), targets.flatten(0, 1), observation)
-        elif self.ssl_obj == 'barlow':
+        elif self.ssl_obj == "barlow":
             loss = self.do_barlow_loss(pred_latents, targets)
         else:
             raise NotImplementedError
@@ -429,7 +435,7 @@ class SPRCatDqnModel(torch.nn.Module):
     def calculate_diversity(self, global_latents, observation):
         global_latents = global_latents.view(observation.shape[1], self.jumps + 1, global_latents.shape[-1])[:, 0]
         # shape is jumps, bs, dim
-        global_latents = F.normalize(global_latents, p=2., dim=-1, eps=1e-3)
+        global_latents = F.normalize(global_latents, p=2.0, dim=-1, eps=1e-3)
         cos_sim = torch.matmul(global_latents, global_latents.transpose(0, 1))
         mask = 1 - (torch.eye(cos_sim.shape[0], device=cos_sim.device, dtype=torch.float))
 
@@ -446,13 +452,11 @@ class SPRCatDqnModel(torch.nn.Module):
 
     @torch.no_grad()
     def transform(self, images, transforms, augment=False):
-        images = images.float() / 255. if images.dtype == torch.uint8 else images
+        images = images.float() / 255.0 if images.dtype == torch.uint8 else images
         if augment:
             flat_images = images.reshape(-1, *images.shape[-3:])
-            processed_images = self.apply_transforms(transforms,
-                                                     flat_images)
-            images = processed_images.view(*images.shape[:-3],
-                                                     *processed_images.shape[1:])
+            processed_images = self.apply_transforms(transforms, flat_images)
+            images = processed_images.view(*images.shape[:-3], *processed_images.shape[1:])
 
         if self.input_bn is not None:
             if len(images.shape) == 4:
@@ -480,22 +484,34 @@ class SPRCatDqnModel(torch.nn.Module):
         conv_params = {k: v for k, v in all_parameters.items() if k.startswith("conv")}
         dynamics_model_params = {k: v for k, v in all_parameters.items() if k.startswith("dynamics_model")}
 
-        q_l1_params = {k: v for k, v in all_parameters.items()
-                       if (k.startswith("head.goal_value.0")
-                           or k.startswith("head.goal_advantage.0")
-                           or k.startswith("head.rl_value.0")
-                           or k.startswith("head.rl_advantage.0"))}
+        q_l1_params = {
+            k: v
+            for k, v in all_parameters.items()
+            if (
+                k.startswith("head.goal_value.0")
+                or k.startswith("head.goal_advantage.0")
+                or k.startswith("head.rl_value.0")
+                or k.startswith("head.rl_advantage.0")
+            )
+        }
 
-        other_params = {k: v for k, v in all_parameters.items() if not
-        (k.startswith("target")
-         or k in conv_params.keys()
-         or k in dynamics_model_params.keys()
-         or k in q_l1_params.keys())}
+        other_params = {
+            k: v
+            for k, v in all_parameters.items()
+            if not (
+                k.startswith("target")
+                or k in conv_params.keys()
+                or k in dynamics_model_params.keys()
+                or k in q_l1_params.keys()
+            )
+        }
 
-        return self.sort_params(conv_params), \
-               self.sort_params(dynamics_model_params), \
-               self.sort_params(q_l1_params), \
-               self.sort_params(other_params)
+        return (
+            self.sort_params(conv_params),
+            self.sort_params(dynamics_model_params),
+            self.sort_params(q_l1_params),
+            self.sort_params(other_params),
+        )
 
     def stem_forward(self, img):
         """Returns the normalized output of convolutional layers."""
@@ -504,17 +520,14 @@ class SPRCatDqnModel(torch.nn.Module):
         with torch.no_grad() if self.frozen_encoder else nullcontext():
             conv_out = self.conv(img.view(T * B, *img_shape))  # Fold if T dimension.
             conv_out = conv_out[-1] if isinstance(conv_out, list) else conv_out
-            if 'gru' in self.transition_type:
+            if "gru" in self.transition_type:
                 conv_out_renorm = self.renormalize_tensor(conv_out)
             else:
                 conv_out_renorm = self.renormalize(conv_out)
 
         return conv_out_renorm, conv_out
 
-    def head_forward(self,
-                     conv_out,
-                     goal=None,
-                     logits=False):
+    def head_forward(self, conv_out, goal=None, logits=False):
         lead_dim, T, B, img_shape = infer_leading_dims(conv_out, 3)
         p = self.head(conv_out, goal)
 
@@ -535,8 +548,8 @@ class SPRCatDqnModel(torch.nn.Module):
 
         conv_out = encoder(images.flatten(0, 1))
         conv_out = conv_out[-1] if isinstance(conv_out, list) else conv_out
-        
-        if 'gru' in self.transition_type:
+
+        if "gru" in self.transition_type:
             latents = self.renormalize_tensor(conv_out)
         else:
             latents = self.renormalize(conv_out)
@@ -545,17 +558,9 @@ class SPRCatDqnModel(torch.nn.Module):
 
         if project:
             proj_latents = projection(latents)
-            proj_latents = proj_latents.view(
-                images.shape[0],
-                images.shape[1],
-                -1
-            )
+            proj_latents = proj_latents.view(images.shape[0], images.shape[1], -1)
 
-            return proj_latents, conv_out, latents.view(
-                images.shape[0],
-                images.shape[1],
-                -1
-            )
+            return proj_latents, conv_out, latents.view(images.shape[0], images.shape[1], -1)
         else:
             return latents.view(images.shape[0], images.shape[1], -1)
 
@@ -583,7 +588,7 @@ class SPRCatDqnModel(torch.nn.Module):
             embed, _ = self.stem_forward(input_obs)
 
             latent, posterior_logits, prior_logits, stoch = self.step(
-                latent, prev_action[j], embed.flatten(1,-1), stoch, eval=eval
+                latent, prev_action[j], embed.flatten(1, -1), stoch, eval=eval
             )
 
             embeds.append(embed)
@@ -621,7 +626,7 @@ class SPRCatDqnModel(torch.nn.Module):
         pred_latents = []
         reprs = []
 
-        if self.transition_type == 'gru_det':
+        if self.transition_type == "gru_det":
             latent = latent.flatten(1, -1)
 
         for j in range(jumps):
@@ -637,13 +642,7 @@ class SPRCatDqnModel(torch.nn.Module):
 
         return pred_latents, reprs
 
-    def forward(self,
-                observation,
-                prev_action,
-                prev_reward,
-                goal=None,
-                train=False,
-                eval=False):
+    def forward(self, observation, prev_action, prev_reward, goal=None, train=False, eval=False):
         """
         For convenience reasons with DistributedDataParallel the forward method
         has been split into two cases, one for training and one for eval.
@@ -654,9 +653,7 @@ class SPRCatDqnModel(torch.nn.Module):
                 all_input_obs = observation[:to_encode].transpose(0, 1).flatten(2, 3)
 
                 latents, pred_latents, det_states, priors, posteriors, _, reprs = self.propagate_forward(
-                    all_input_obs,
-                    prev_action,
-                    self.jumps
+                    all_input_obs, prev_action, self.jumps
                 )
                 latent = latents[0]
             else:
@@ -665,27 +662,19 @@ class SPRCatDqnModel(torch.nn.Module):
                 latent, conv_out = self.stem_forward(input_obs)
 
                 pred_latents = [latent.flatten(1, -1)]
-                pred_latents_jumps, reprs = self.imagine_forward_det(
-                    latent,
-                    prev_action[1:],
-                    self.jumps
-                )
+                pred_latents_jumps, reprs = self.imagine_forward_det(latent, prev_action[1:], self.jumps)
                 pred_latents += pred_latents_jumps
 
                 posteriors = []
                 priors = []
 
             if self.rl or self.bc_from_values:
-                log_pred_ps = self.head_forward(latent,
-                                                goal=None,
-                                                logits=True)
+                log_pred_ps = self.head_forward(latent, goal=None, logits=True)
             else:
                 log_pred_ps = None
 
             if goal is not None:
-                goal_log_pred_ps = self.head_forward(latent,
-                                                     goal=goal,
-                                                     logits=True)
+                goal_log_pred_ps = self.head_forward(latent, goal=goal, logits=True)
             else:
                 goal_log_pred_ps = None
 
@@ -696,24 +685,23 @@ class SPRCatDqnModel(torch.nn.Module):
                 target_latents = []
 
                 for j in range(self.jumps + 1):
-                    target_obs = target_observations[:,j,:]
+                    target_obs = target_observations[:, j, :]
                     target_obs = self.transform(target_obs, self.target_transforms, True)
                     target_latent = self.target_encoder(target_obs)
                     target_latent = target_latent[-1] if isinstance(target_latent, list) else target_latent
                     target_latents.append(target_latent)
 
                 for j in range(self.jumps + 1):
-                    if 'gru' in self.transition_type:
+                    if "gru" in self.transition_type:
                         target_latents[j] = self.renormalize_tensor(target_latents[j], target=True)
                     else:
                         target_latents[j] = self.renormalize(target_latents[j])
 
-                target_latents = torch.stack(target_latents, dim=1).flatten(2,4)
+                target_latents = torch.stack(target_latents, dim=1).flatten(2, 4)
                 target_proj = self.target_projection(target_latents)
 
             pred_latents = torch.stack(pred_latents, 1)
             proj_latents = self.projection(pred_latents)
-
 
             if self.use_spr:
                 spr_loss = self.do_spr_loss(proj_latents, target_proj, observation)
@@ -724,7 +712,8 @@ class SPRCatDqnModel(torch.nn.Module):
             with torch.no_grad():
                 cos = nn.CosineSimilarity(dim=1, eps=1e-6)
                 embed_cos = torch.mean(
-                    cos(pred_latents[:, 1:, :].flatten(0, 1), target_latents[:, 1:, :].flatten(0, 1)))
+                    cos(pred_latents[:, 1:, :].flatten(0, 1), target_latents[:, 1:, :].flatten(0, 1))
+                )
                 proj_cos = torch.mean(cos(proj_latents[:, 1:, :].flatten(0, 1), target_proj[:, 1:, :].flatten(0, 1)))
 
             latent_kl_loss = self.latent_kl_loss(posteriors, priors)
@@ -745,8 +734,9 @@ class SPRCatDqnModel(torch.nn.Module):
                 pred_actions = pred_actions.view(stack.shape[0], stack.shape[1], *pred_actions.shape[1:])
                 pred_actions = pred_actions.transpose(0, 1)
                 # correct impl
-                inv_model_loss = F.cross_entropy(pred_actions.flatten(0, 1),
-                                                 prev_action[1:self.jumps + 1].flatten(0, 1), reduction="none")
+                inv_model_loss = F.cross_entropy(
+                    pred_actions.flatten(0, 1), prev_action[1 : self.jumps + 1].flatten(0, 1), reduction="none"
+                )
                 inv_model_loss = inv_model_loss.view(*pred_actions.shape[:-1]).mean(0)
             else:
                 inv_model_loss = torch.zeros_like(spr_loss).mean(0)
@@ -754,26 +744,23 @@ class SPRCatDqnModel(torch.nn.Module):
             diversity = self.calculate_diversity(proj_latents, observation)
 
             if self.use_ema:
-                update_state_dict(self.target_encoder,
-                                  self.conv.state_dict(),
-                                  self.momentum_tau)
-                update_state_dict(self.target_projection,
-                                  self.projection.state_dict(),
-                                  self.momentum_tau)
-                update_state_dict(self.target_renormalize_layer,
-                                  self.renormalize_layer.state_dict(),
-                                  self.momentum_tau)
-                
-            return log_pred_ps, \
-                   goal_log_pred_ps, \
-                   spr_loss, \
-                   target_latents, \
-                   target_proj, \
-                   diversity, \
-                   inv_model_loss, \
-                   bc_preds, \
-                   latent_kl_loss, \
-                   embed_cos, proj_cos
+                update_state_dict(self.target_encoder, self.conv.state_dict(), self.momentum_tau)
+                update_state_dict(self.target_projection, self.projection.state_dict(), self.momentum_tau)
+                update_state_dict(self.target_renormalize_layer, self.renormalize_layer.state_dict(), self.momentum_tau)
+
+            return (
+                log_pred_ps,
+                goal_log_pred_ps,
+                spr_loss,
+                target_latents,
+                target_proj,
+                diversity,
+                inv_model_loss,
+                bc_preds,
+                latent_kl_loss,
+                embed_cos,
+                proj_cos,
+            )
         else:
             observation = observation.flatten(-4, -3)
 
@@ -785,8 +772,8 @@ class SPRCatDqnModel(torch.nn.Module):
 
             conv_out = self.conv(img.view(T * B, *img_shape))
             conv_out = conv_out[-1] if isinstance(conv_out, list) else conv_out
-            
-            if 'gru' in self.transition_type:
+
+            if "gru" in self.transition_type:
                 conv_out = self.renormalize_tensor(conv_out)
             else:
                 conv_out = self.renormalize(conv_out)
@@ -808,8 +795,8 @@ class SPRCatDqnModel(torch.nn.Module):
             lead_dim, T, B, img_shape = infer_leading_dims(img, 3)
             conv_out = self.conv(img.view(T * B, *img_shape))
             conv_out = conv_out[-1] if isinstance(conv_out, list) else conv_out
-            
-            if 'gru' in self.transition_type:
+
+            if "gru" in self.transition_type:
                 conv_out = self.renormalize_tensor(conv_out)
             else:
                 conv_out = self.renormalize(conv_out)
@@ -820,7 +807,7 @@ class SPRCatDqnModel(torch.nn.Module):
 
     def step_det(self, state, action):
         next_state = self.dynamics_model(state, action)
-        if 'gru' in self.transition_type:
+        if "gru" in self.transition_type:
             next_repr = self.gru_proj_out(next_state)
             next_repr_renorm = self.renormalize_tensor(next_repr)
             next_state = (next_repr_renorm, next_repr, next_state)
@@ -864,7 +851,7 @@ class SPRCatDqnModel(torch.nn.Module):
 
     def latent_kl_loss(self, posteriors, priors):
         if not self.use_latent:
-            return torch.tensor(0.)
+            return torch.tensor(0.0)
 
         posteriors = torch.cat(posteriors[1:])
         priors = torch.cat(priors[1:])
@@ -876,14 +863,14 @@ class SPRCatDqnModel(torch.nn.Module):
         left_kl = torch.mean(
             torch.distributions.kl.kl_divergence(
                 td.Independent(td.OneHotCategoricalStraightThrough(logits=posteriors), 1),
-                td.Independent(td.OneHotCategoricalStraightThrough(logits=priors.detach()), 1)
+                td.Independent(td.OneHotCategoricalStraightThrough(logits=priors.detach()), 1),
             )
         )
 
         right_kl = torch.mean(
             torch.distributions.kl.kl_divergence(
                 td.Independent(td.OneHotCategoricalStraightThrough(logits=posteriors.detach()), 1),
-                td.Independent(td.OneHotCategoricalStraightThrough(logits=priors), 1)
+                td.Independent(td.OneHotCategoricalStraightThrough(logits=priors), 1),
             )
         )
 
@@ -906,11 +893,11 @@ class SPRCatDqnModel(torch.nn.Module):
                 first_dim = len(tensor.shape) + first_dim
             flat_tensor = tensor.view(*tensor.shape[:first_dim], -1)
 
-        if self.renormalize_type == 'ln' or self.renormalize_type == 'bn':
+        if self.renormalize_type == "ln" or self.renormalize_type == "bn":
             flat_tensor = renormalize_layer(flat_tensor)
-        elif self.renormalize_type == 'ln_nt':
+        elif self.renormalize_type == "ln_nt":
             flat_tensor = renormalize_layer(flat_tensor) * 0.1115 + 0.2
-        elif self.renormalize_type == 'bn_nt':
+        elif self.renormalize_type == "bn_nt":
             flat_tensor = renormalize_layer(flat_tensor) * 0.09
         else:
             raise NotImplementedError
@@ -952,9 +939,7 @@ def maybe_transform(image, transform, p=0.8):
     if p >= 1:
         return processed_images
     else:
-        mask = torch.rand((processed_images.shape[0], 1, 1, 1),
-                          device=processed_images.device)
+        mask = torch.rand((processed_images.shape[0], 1, 1, 1), device=processed_images.device)
         mask = (mask < p).float()
         processed_images = mask * processed_images + (1 - mask) * image
         return processed_images
-

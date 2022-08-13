@@ -65,31 +65,31 @@ class AtariEnv(Env):
         horizon (int): max number of steps before timeout / ``traj_done=True``
     """
 
-    def __init__(self,
-                 game="pong",
-                 frame_skip=4,  # Frames per step (>=1).
-                 num_img_obs=4,  # Number of (past) frames in observation (>=1).
-                 clip_reward=True,
-                 episodic_lives=True,
-                 max_start_noops=30,
-                 repeat_action_probability=0.,
-                 horizon=27000,
-                 stack_actions=0,
-                 grayscale=True,
-                 imagesize=84,
-                 seed=42,
-                 id=0,
-                 full_action_set=False,
-                 ):
+    def __init__(
+        self,
+        game="pong",
+        frame_skip=4,  # Frames per step (>=1).
+        num_img_obs=4,  # Number of (past) frames in observation (>=1).
+        clip_reward=True,
+        episodic_lives=True,
+        max_start_noops=30,
+        repeat_action_probability=0.0,
+        horizon=27000,
+        stack_actions=0,
+        grayscale=True,
+        imagesize=84,
+        seed=42,
+        id=0,
+        full_action_set=False,
+    ):
         save__init__args(locals(), underscore=True)
         # ALE
         game_path = atari_py.get_game_path(game)
         if not os.path.exists(game_path):
-            raise IOError("You asked for game {} but path {} does not "
-                " exist".format(game, game_path))
+            raise IOError("You asked for game {} but path {} does not " " exist".format(game, game_path))
         self.ale = atari_py.ALEInterface()
         self.seed(seed, id)
-        self.ale.setFloat(b'repeat_action_probability', repeat_action_probability)
+        self.ale.setFloat(b"repeat_action_probability", repeat_action_probability)
         self.ale.loadROM(game_path)
 
         # Spaces
@@ -100,12 +100,11 @@ class AtariEnv(Env):
         self.channels = 1 if grayscale else 3
         self.grayscale = grayscale
         self.imagesize = imagesize
-        if self.stack_actions: self.channels += 1
+        if self.stack_actions:
+            self.channels += 1
         obs_shape = (num_img_obs, self.channels, imagesize, imagesize)
-        self._observation_space = IntBox(low=0, high=255, shape=obs_shape,
-            dtype="uint8")
-        self._max_frame = self.ale.getScreenGrayscale() if self.grayscale \
-            else self.ale.getScreenRGB()
+        self._observation_space = IntBox(low=0, high=255, shape=obs_shape, dtype="uint8")
+        self._max_frame = self.ale.getScreenGrayscale() if self.grayscale else self.ale.getScreenRGB()
         self._raw_frame_1 = self._max_frame.copy()
         self._raw_frame_2 = self._max_frame.copy()
         self._obs = np.zeros(shape=obs_shape, dtype="uint8")
@@ -119,14 +118,14 @@ class AtariEnv(Env):
     def seed(self, seed=None, id=0):
         _, seed1 = seeding.np_random(seed)
         if id > 0:
-            seed = seed*100 + id
+            seed = seed * 100 + id
         self.np_random, _ = seeding.np_random(seed)
         # Derive a random seed. This gets passed as a uint, but gets
         # checked as an int elsewhere, so we need to keep it below
         # 2**31.
         seed2 = seeding.hash_seed(seed1 + 1) % 2**31
         # Empirically, we need to seed before loading the ROM.
-        self.ale.setInt(b'random_seed', seed2)
+        self.ale.setInt(b"random_seed", seed2)
 
     def reset(self):
         """Performs hard reset of ALE game."""
@@ -144,7 +143,7 @@ class AtariEnv(Env):
 
     def step(self, action):
         a = self._action_set[action]
-        game_score = np.array(0., dtype="float32")
+        game_score = np.array(0.0, dtype="float32")
         for _ in range(self._frame_skip - 1):
             game_score += self.ale.act(a)
         self._get_screen(1)
@@ -188,15 +187,15 @@ class AtariEnv(Env):
     def _update_obs(self, action):
         """Max of last two frames; crop two rows; downsample by 2x."""
         self._get_screen(2)
-        np.maximum(self._raw_frame_1, self._raw_frame_2, self._max_frame) #[210,160,1], [210,160,1]
+        np.maximum(self._raw_frame_1, self._raw_frame_2, self._max_frame)  # [210,160,1], [210,160,1]
         img = cv2.resize(self._max_frame, (self.imagesize, self.imagesize), cv2.INTER_LINEAR)
         if len(img.shape) == 2:
             img = img[np.newaxis]
         else:
             img = np.transpose(img, (2, 0, 1))
         if self.stack_actions:
-            action = int(255.*action/self._action_space.n)
-            action = np.ones_like(img[:1])*action
+            action = int(255.0 * action / self._action_space.n)
+            action = np.ones_like(img[:1]) * action
             img = np.concatenate([img, action], 0)
         # NOTE: order OLDEST to NEWEST should match use in frame-wise buffer.
         self._obs = np.concatenate([self._obs[1:], img[np.newaxis]])

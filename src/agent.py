@@ -5,8 +5,8 @@ from torch.distributions.categorical import Categorical
 from rlpyt.agents.dqn.atari.atari_catdqn_agent import AtariCatDqnAgent
 from rlpyt.utils.buffer import buffer_to
 from rlpyt.utils.collections import namedarraytuple
-AgentInputs = namedarraytuple("AgentInputs",
-    ["observation", "prev_action", "prev_reward"])
+
+AgentInputs = namedarraytuple("AgentInputs", ["observation", "prev_action", "prev_reward"])
 AgentInfo = namedarraytuple("AgentInfo", "p")
 AgentStep = namedarraytuple("AgentStep", ["action", "agent_info"])
 
@@ -24,35 +24,30 @@ class SPRAgent(AtariCatDqnAgent):
     def __call__(self, observation, prev_action, prev_reward, goal=None, train=False):
         """Returns Q-values for states/observations (with grad)."""
         if train:
-            model_inputs = buffer_to((observation, prev_action,
-                                      prev_reward, goal),
-                                     device=self.device)
+            model_inputs = buffer_to((observation, prev_action, prev_reward, goal), device=self.device)
             return self.model(*model_inputs, train=train)
         else:
             device = observation.device
             prev_action = self.distribution.to_onehot(prev_action)
-            model_inputs = buffer_to((observation, prev_action,
-                                      prev_reward, goal),
-                                     device=self.device)
+            model_inputs = buffer_to((observation, prev_action, prev_reward, goal), device=self.device)
             return self.model(*model_inputs).to(device)
 
     def target(self, observation, prev_action, prev_reward, goal=None):
         """Returns the target Q-values for states/observations."""
         prev_action = self.distribution.to_onehot(prev_action)
-        model_inputs = buffer_to((observation, prev_action, prev_reward, goal),
-            device=self.device)
+        model_inputs = buffer_to((observation, prev_action, prev_reward, goal), device=self.device)
         target_q = self.target_model(*model_inputs)
         return target_q
 
-    def initialize(self,
-                   env_spaces,
-                   share_memory=False,
-                   global_B=1,
-                   env_ranks=None):
+    def initialize(self, env_spaces, share_memory=False, global_B=1, env_ranks=None):
         super().initialize(env_spaces, share_memory, global_B, env_ranks)
         # Overwrite distribution.
-        self.search = SPRActionSelection(self.model, self.distribution, repeat_random_lambda=self.repeat_random_lambda,
-                                         softmax_policy=self.softmax_policy)
+        self.search = SPRActionSelection(
+            self.model,
+            self.distribution,
+            repeat_random_lambda=self.repeat_random_lambda,
+            softmax_policy=self.softmax_policy,
+        )
 
     def to_device(self, cuda_idx=None):
         """Moves the model to the specified cuda device, if not ``None``.  If
@@ -130,7 +125,7 @@ class SPRActionSelection(torch.nn.Module):
     def run(self, obs):
         while len(obs.shape) <= 4:
             obs.unsqueeze_(0)
-        obs = obs.to(self.device).float() / 255.
+        obs = obs.to(self.device).float() / 255.0
 
         # Don't even bother with the network if all actions will be random.
         if self.epsilon == 1:

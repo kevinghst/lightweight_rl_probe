@@ -13,43 +13,46 @@ from itertools import zip_longest
 from .rlpyt_atari_env import AtariEnv
 from src.utils import discount_return_n_step
 
-OfflineSamples = namedarraytuple("OfflineSamples",
-                                 ["all_observation", "all_action", "all_reward", "return_", "done", "done_n",
-                                  "init_rnn_state", "is_weights"])
+OfflineSamples = namedarraytuple(
+    "OfflineSamples",
+    ["all_observation", "all_action", "all_reward", "return_", "done", "done_n", "init_rnn_state", "is_weights"],
+)
 
 
 class DQNReplayDataset(Dataset):  # double check logic for saving/loading eval dataset
-    def __init__(self, data_path: Path,
-                 game: str,
-                 checkpoint: int,
-                 run: int,
-                 frames: int,
-                 k_step: int,
-                 eval: int,
-                 ft: int,
-                 max_size: int,
-                 full_action_set: bool,
-                 dataset_on_gpu: bool,
-                 dummy_action: bool,
-                 ft_ckpt: int,
-                 ) -> None:
+    def __init__(
+        self,
+        data_path: Path,
+        game: str,
+        checkpoint: int,
+        run: int,
+        frames: int,
+        k_step: int,
+        eval: int,
+        ft: int,
+        max_size: int,
+        full_action_set: bool,
+        dataset_on_gpu: bool,
+        dummy_action: bool,
+        ft_ckpt: int,
+    ) -> None:
         load_reward = True
         data = []
         self.load_reward = load_reward
         self.eval = eval
-        filetypes = ['reward', 'action', 'terminal', 'observation']
+        filetypes = ["reward", "action", "terminal", "observation"]
         if not load_reward:
             filetypes = filetypes[1:]
         for i, filetype in enumerate(filetypes):
             if eval:
-                filename = Path(data_path / f'{game}/{filetype}_{run}_{ft_ckpt}_eval.npy')
+                filename = Path(data_path / f"{game}/{filetype}_{run}_{ft_ckpt}_eval.npy")
             elif ft:
-                filename = Path(data_path / f'{game}/{filetype}_{run}_{ft_ckpt}_ft.npy')
+                filename = Path(data_path / f"{game}/{filetype}_{run}_{ft_ckpt}_ft.npy")
             else:
-                filename = Path(data_path / f'{game}/{filetype}_{checkpoint}.npy')
+                filename = Path(data_path / f"{game}/{filetype}_{checkpoint}.npy")
 
-            print(f'Loading {filename}')
-            if filetype == 'observation':
+            print(f"Loading {filename}")
+            if filetype == "observation":
                 data_ = np.load(filename, mmap_mode="r+")
             else:
                 data_ = np.load(filename)
@@ -59,10 +62,13 @@ class DQNReplayDataset(Dataset):  # double check logic for saving/loading eval d
 
             data_ = np.expand_dims(data_, 1)
 
-            if (filetype == 'action') and full_action_set:
-                action_mapping = dict(zip(data_.unique().numpy(),
-                                          AtariEnv(
-                                              re.sub(r'(?<!^)(?=[A-Z])', '_', game).lower()).ale.getMinimalActionSet()))
+            if (filetype == "action") and full_action_set:
+                action_mapping = dict(
+                    zip(
+                        data_.unique().numpy(),
+                        AtariEnv(re.sub(r"(?<!^)(?=[A-Z])", "_", game).lower()).ale.getMinimalActionSet(),
+                    )
+                )
                 data_.apply_(lambda x: action_mapping[x])
             if dataset_on_gpu:
                 print("Stored on GPU")
@@ -70,7 +76,7 @@ class DQNReplayDataset(Dataset):  # double check logic for saving/loading eval d
                 del data___
             data.append(data_)
 
-            if filetype == 'action' and dummy_action:
+            if filetype == "action" and dummy_action:
                 data_ = torch.zeros_like(data_)
 
             setattr(self, filetype, data_)
@@ -79,7 +85,7 @@ class DQNReplayDataset(Dataset):  # double check logic for saving/loading eval d
         self.f = frames
         self.k = k_step
         self.size = min(self.action.shape[0], max_size)
-        self.effective_size = (self.size - self.f - self.k + 1)
+        self.effective_size = self.size - self.f - self.k + 1
         # self.observation.shape = [100000, 1, 84, 84]
         # self.reward.shape = [10000, 1]
         # self.effective_size = 99981
@@ -91,48 +97,59 @@ class DQNReplayDataset(Dataset):  # double check logic for saving/loading eval d
         batch_ind = index // self.effective_size
         time_ind = index % self.effective_size
         sl = slice(time_ind, time_ind + self.f + self.k)
-        obs = (self.observation[sl, batch_ind])  # [20, 84, 84]
+        obs = self.observation[sl, batch_ind]  # [20, 84, 84]
 
         # Buffer reading code still expects us to return rewards even when not used
         if self.load_reward:
             rewards = self.reward[sl, batch_ind]
         else:
             rewards = torch.zeros_like(self.terminal[sl, batch_ind]).float()
-        return tuple([obs,
-                      self.action[sl, batch_ind],
-                      rewards,
-                      self.terminal[sl, batch_ind],
-                      ])
+        return tuple(
+            [
+                obs,
+                self.action[sl, batch_ind],
+                rewards,
+                self.terminal[sl, batch_ind],
+            ]
+        )
 
 
 class MultiDQNReplayDataset(Dataset):
-    def __init__(self, data_path: Path,
-                 games: List[str],
-                 checkpoints: List[int],
-                 run: int,
-                 frames: int,
-                 k_step: int,
-                 eval: int,
-                 ft: int,
-                 max_size: int,
-                 full_action_set: bool,
-                 dataset_on_gpu: bool,
-                 dummy_action: bool,
-                 ft_ckpt: int
-                 ) -> None:
-        self.games = [DQNReplayDataset(data_path,
-                                       game,
-                                       ckpt,
-                                       run,
-                                       frames,
-                                       k_step,
-                                       eval,
-                                       ft,
-                                       max_size,
-                                       full_action_set,
-                                       dataset_on_gpu,
-                                       dummy_action,
-                                       ft_ckpt) for ckpt in checkpoints for game in games]
+    def __init__(
+        self,
+        data_path: Path,
+        games: List[str],
+        checkpoints: List[int],
+        run: int,
+        frames: int,
+        k_step: int,
+        eval: int,
+        ft: int,
+        max_size: int,
+        full_action_set: bool,
+        dataset_on_gpu: bool,
+        dummy_action: bool,
+        ft_ckpt: int,
+    ) -> None:
+        self.games = [
+            DQNReplayDataset(
+                data_path,
+                game,
+                ckpt,
+                run,
+                frames,
+                k_step,
+                eval,
+                ft,
+                max_size,
+                full_action_set,
+                dataset_on_gpu,
+                dummy_action,
+                ft_ckpt,
+            )
+            for ckpt in checkpoints
+            for game in games
+        ]
 
         self.num_blocks = len(self.games)
         self.block_len = len(self.games[0])
@@ -151,45 +168,45 @@ def sanitize_batch(batch: OfflineSamples) -> OfflineSamples:
     for i, (has_done, ind) in enumerate(zip(has_dones, inds)):
         if not has_done:
             continue
-        batch.all_observation[ind + 1:, i] = batch.all_observation[ind, i]
-        batch.all_reward[ind + 1:, i] = 0
-        batch.return_[ind + 1:, i] = 0
-        batch.done_n[ind + 1:, i] = True
+        batch.all_observation[ind + 1 :, i] = batch.all_observation[ind, i]
+        batch.all_reward[ind + 1 :, i] = 0
+        batch.return_[ind + 1 :, i] = 0
+        batch.done_n[ind + 1 :, i] = True
 
     return batch
 
 
 def get_offline_dataloaders(
-        *,
-        data_path: Path,
-        games: List[str],
-        checkpoints: List[int],
-        run: int,
-        frames: int,
-        k_step: int,
-        eval: int,
-        ft: int,
-        n_step_return: int,
-        discount: float,
-        samples: int,
-        dataset_on_gpu: bool,
-        batch_size: int,
-        full_action_set: bool,
-        num_workers: int,
-        pin_memory: bool,
-        prefetch_factor: int,
-        group_read_factor: int = 0,
-        shuffle_checkpoints: bool = False,
-        dummy_action: bool = False,
-        ft_ckpt: int,
-        **kwargs
+    *,
+    data_path: Path,
+    games: List[str],
+    checkpoints: List[int],
+    run: int,
+    frames: int,
+    k_step: int,
+    eval: int,
+    ft: int,
+    n_step_return: int,
+    discount: float,
+    samples: int,
+    dataset_on_gpu: bool,
+    batch_size: int,
+    full_action_set: bool,
+    num_workers: int,
+    pin_memory: bool,
+    prefetch_factor: int,
+    group_read_factor: int = 0,
+    shuffle_checkpoints: bool = False,
+    dummy_action: bool = False,
+    ft_ckpt: int,
+    **kwargs,
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     def collate(batch):
         observation, action, reward, done = torch.utils.data.dataloader.default_collate(batch)
         # observation.shape = [256, 20, 84, 84]
         # action.shape      = [256, 20]
 
-        observation = torch.einsum('bthw->tbhw', observation).unsqueeze(2).repeat(1, 1, frames, 1, 1)
+        observation = torch.einsum("bthw->tbhw", observation).unsqueeze(2).repeat(1, 1, frames, 1, 1)
         # [256, 20, 84, 84] -> [20, 256, 84, 84] -> [20, 256, 1, 84, 84] -> [20, 256, 4, 84, 84]
 
         for i in range(1, frames):
@@ -201,9 +218,9 @@ def get_offline_dataloaders(
             observation = observation[:-frames].unsqueeze(3)  # tbfchw # [16, 256, 4, 1, 84, 84] drop last 4 frames
 
             # after fix:
-            action = torch.einsum('bt->tb', action)[frames - 2:-2].long()
-            reward = torch.einsum('bt->tb', reward)[frames - 2:-2]
-            done = torch.einsum('bt->tb', done)[frames - 1:-1].bool()
+            action = torch.einsum("bt->tb", action)[frames - 2 : -2].long()
+            reward = torch.einsum("bt->tb", reward)[frames - 2 : -2]
+            done = torch.einsum("bt->tb", done)[frames - 1 : -1].bool()
 
             # before fix:
             # action = torch.einsum('bt->tb', action)[frames-1:-1].long()
@@ -213,24 +230,37 @@ def get_offline_dataloaders(
             # done frames: [4,5,6...]
         else:
             observation = observation[1:].unsqueeze(3)
-            action = torch.einsum('bt->tb', action)[:-1].long()
-            reward = torch.einsum('bt->tb', reward)[:-1]
-            done = torch.einsum('bt->tb', done)[1:].bool()
+            action = torch.einsum("bt->tb", action)[:-1].long()
+            reward = torch.einsum("bt->tb", reward)[:-1]
+            done = torch.einsum("bt->tb", done)[1:].bool()
             # done frames: [4,5,6...]
 
         reward = torch.nan_to_num(reward).sign()  # Apparently possible, somehow.
         # action and reward frames: [3, 4, 5, ....]
 
-        return_, done_n = discount_return_n_step(reward[1:], done, n_step_return,
-                                                 discount)  # might need to fix for frame==1
+        return_, done_n = discount_return_n_step(
+            reward[1:], done, n_step_return, discount
+        )  # might need to fix for frame==1
         is_weights = torch.ones(observation.shape[1]).to(reward)
 
         return sanitize_batch(
-            OfflineSamples(observation, action, reward, return_, done[:-n_step_return], done_n, None, is_weights))
+            OfflineSamples(observation, action, reward, return_, done[:-n_step_return], done_n, None, is_weights)
+        )
 
     dataset = MultiDQNReplayDataset(
-        data_path, games, checkpoints, run, frames, k_step, eval, ft, samples,
-        full_action_set, dataset_on_gpu, dummy_action, ft_ckpt
+        data_path,
+        games,
+        checkpoints,
+        run,
+        frames,
+        k_step,
+        eval,
+        ft,
+        samples,
+        full_action_set,
+        dataset_on_gpu,
+        dummy_action,
+        ft_ckpt,
     )
 
     if shuffle_checkpoints:
@@ -240,21 +270,27 @@ def get_offline_dataloaders(
 
     if group_read_factor != 0:
         sampler = CacheEfficientSampler(dataset.num_blocks, dataset.block_len, group_read_factor)
-        dataloader = DataLoader(dataset, batch_size=batch_size,
-                                sampler=sampler,
-                                num_workers=num_workers,
-                                pin_memory=pin_memory,
-                                collate_fn=collate,
-                                drop_last=True,
-                                prefetch_factor=prefetch_factor)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=batch_size,
+            sampler=sampler,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            collate_fn=collate,
+            drop_last=True,
+            prefetch_factor=prefetch_factor,
+        )
     else:
-        dataloader = DataLoader(dataset, batch_size=batch_size,
-                                shuffle=True,
-                                num_workers=num_workers,
-                                pin_memory=pin_memory,
-                                collate_fn=collate,
-                                drop_last=True,
-                                prefetch_factor=prefetch_factor)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            collate_fn=collate,
+            drop_last=True,
+            prefetch_factor=prefetch_factor,
+        )
 
     return dataloader, None, None
 
@@ -282,8 +318,9 @@ class CacheEfficientSampler(torch.utils.data.Sampler):
 
         self.block_ids = [np.arange(self.num_blocks)] * (self.block_len // self.num_repeats)
         blocks = torch.randperm(n // self.num_repeats, generator=generator) % self.num_blocks
-        intra_orders = [torch.randperm(self.block_len, generator=generator) + self.block_len * i for i in
-                        range(self.num_blocks)]
+        intra_orders = [
+            torch.randperm(self.block_len, generator=generator) + self.block_len * i for i in range(self.num_blocks)
+        ]
         intra_orders = [i.tolist() for i in intra_orders]
 
         indices = []
@@ -291,7 +328,8 @@ class CacheEfficientSampler(torch.utils.data.Sampler):
 
         for block in blocks:
             indices += intra_orders[block][
-                       (block_counts[block] * self.num_repeats):(block_counts[block] + 1) * self.num_repeats]
+                (block_counts[block] * self.num_repeats) : (block_counts[block] + 1) * self.num_repeats
+            ]
             block_counts[block] += 1
 
         return iter(indices)
@@ -299,13 +337,15 @@ class CacheEfficientSampler(torch.utils.data.Sampler):
     def __len__(self):
         return self.num_samples()
 
-def shuffle_batch_dim(observations,
-                      rewards,
-                      actions,
-                      dones,
-                      obs_on_disk=True,
-                      chunk_num=1,
-                      ):
+
+def shuffle_batch_dim(
+    observations,
+    rewards,
+    actions,
+    dones,
+    obs_on_disk=True,
+    chunk_num=1,
+):
     """
     :param observations: (T, B, *) obs tensor, optionally mmap
     :param rewards: (T, B) rewards tensor
@@ -322,13 +362,15 @@ def shuffle_batch_dim(observations,
     shuffled_observations, shuffled_rewards, shuffled_actions, shuffled_dones = [], [], [], []
 
     checkpoints = list(range(num_sources))
-    for sources, shuffled, filetype in zip([observations, rewards, actions, dones],
-                                           [shuffled_observations, shuffled_rewards, shuffled_actions, shuffled_dones],
-                                           ["observations", "rewards", "actions", "dones"]):
+    for sources, shuffled, filetype in zip(
+        [observations, rewards, actions, dones],
+        [shuffled_observations, shuffled_rewards, shuffled_actions, shuffled_dones],
+        ["observations", "rewards", "actions", "dones"],
+    ):
         ind_counters = [0] * num_sources
 
         for start in checkpoints[::chunk_num]:
-            chunk = checkpoints[start:start + chunk_num]
+            chunk = checkpoints[start : start + chunk_num]
             chunk_arrays = []
             for i in chunk:
                 if isinstance(sources[0], torch.Tensor):
@@ -340,9 +382,9 @@ def shuffle_batch_dim(observations,
                 print(chunk, ind_counters)
                 for i, new_array in zip(chunk, chunk_arrays):
                     mapped_to_us = [b for b, dest in enumerate(allocation) if dest == i]
-                    new_array[:, ind_counters[i]:ind_counters[i] + len(mapped_to_us)] = source[:,
-                                                                                        mapped_to_us[0]:mapped_to_us[
-                                                                                                            -1] + 1]
+                    new_array[:, ind_counters[i] : ind_counters[i] + len(mapped_to_us)] = source[
+                        :, mapped_to_us[0] : mapped_to_us[-1] + 1
+                    ]
                     ind_counters[i] += len(mapped_to_us)
 
             for i, new_array in zip(chunk, chunk_arrays):

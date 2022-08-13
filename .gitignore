@@ -126,3 +126,6 @@ checkpoints/*
 
 # rlpyt packaging
 src/rlpyt
+
+# logs
+logs/
