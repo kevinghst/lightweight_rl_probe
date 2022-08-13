@@ -19,9 +19,6 @@ import torch
 import numpy as np
 import time
 
-import pdb
-
-
 atari_human_scores = dict(
     alien=7127.7, amidar=1719.5, assault=742.0, asterix=8503.3,
     bank_heist=753.1, battle_zone=37187.5, boxing=12.1,

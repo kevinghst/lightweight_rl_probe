@@ -22,8 +22,6 @@ from src.rlpyt_atari_env import AtariEnv
 from src.rlpyt_utils import OnlineEval, OfflineEval, OneToOneSerialEvalCollector, SerialSampler
 from src.utils import get_last_save, save_model_fn
 
-import pdb
-
 @hydra.main(config_name="config")
 def main(args: DictConfig):
     args = OmegaConf.merge(configs['ernbw'], args)

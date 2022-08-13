@@ -13,8 +13,6 @@ from pathlib import Path
 import os
 import src.transforms as T
 EPS = 1e-6
-import pdb
-
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)

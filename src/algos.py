@@ -5,8 +5,6 @@ import torch.nn.functional as F
 from torch.optim.lr_scheduler import StepLR
 import time
 
-import pdb
-
 from contextlib import nullcontext
 from tqdm import tqdm
 import copy
@@ -24,7 +22,7 @@ from rlpyt.replays.sequence.prioritized import SamplesFromReplayPri
 
 from src.losses import SigmoidFocalLoss, SoftmaxFocalLoss
 
-from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import f1_score
 from cyanure.estimators import Classifier
 from cyanure.data_processing import preprocess
 

@@ -6,8 +6,6 @@ from src.utils import renormalize
 from rlpyt.models.utils import scale_grad
 from rlpyt.utils.tensor import infer_leading_dims, restore_leading_dims
 import copy
-import pdb
-
 
 def fixup_init(layer, num_layers):
     nn.init.normal_(layer.weight, mean=0, std=np.sqrt(
